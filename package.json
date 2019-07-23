@@ -1,0 +1,15 @@
+{
+  "private": true,
+  "name": "bon",
+  "version": "1.0.0",
+  "description": "",
+  "author": "",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@types/node-fetch": "^2.1.6",
+    "fs-extra": "^7.0.1",
+    "node-fetch": "^2.3.0",
+    "seedrandom": "^3.0.1",
+    "source-map-support": "^0.5.10"
+  }
+}

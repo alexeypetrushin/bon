@@ -1,0 +1,42 @@
+{
+  "compilerOptions": {
+    "lib": ["dom", "es2017"],
+    "target": "es5",
+    "rootDir": ".",
+
+    "alwaysStrict": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "preserveConstEnums": true,
+    "removeComments": false,
+    "sourceMap": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "strictBindCallApply": true,
+    "strictNullChecks": true,
+    "strictPropertyInitialization": true,
+    "pretty": true,
+    "declaration": true,
+    "experimentalDecorators": true,
+
+    "jsx": "react",
+    "jsxFactory": "tag",
+
+    // "baseUrl": ".",
+    // "paths": {
+    //   "base":       ["mono/base"],
+    //   "mono":       ["mono"],
+    //   "server":     ["app/server/support/server-imports"],
+    //   "collection": ["app/server/support/collection-imports"],
+    //   "palette":    ["app/server/palette"]
+    // }
+  },
+  "exclude": [
+    "build",
+    "vendor",
+    "node_modules",
+    "**/*.spec.ts"
+  ]
+}
