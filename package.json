@@ -6,6 +6,7 @@
   "author": "",
   "license": "UNLICENSED",
   "dependencies": {
+    "@types/fs-extra": "^8.0.0",
     "@types/node-fetch": "^2.1.6",
     "fs-extra": "^7.0.1",
     "node-fetch": "^2.3.0",
