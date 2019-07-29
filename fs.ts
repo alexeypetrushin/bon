@@ -27,6 +27,8 @@ export async function writeFile(
   // Could be speed up by handling exception instead of checking for existance.
   const directory = nodepath.dirname(path)
   if (!(await exists(directory))) await makeDirectory(directory)
+  options = { ...options }
+  options.encoding = options.encoding || 'utf-8'
 
   await promisify(nodefs.writeFile)(path, data, options)
 }

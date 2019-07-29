@@ -45,11 +45,8 @@ inlineTest.run = async () => {
   }
 }
 
-// let runInlineTestsAutomatically = environment == 'development'
-// uniglobal.setTimeout(() => { if (runInlineTestsAutomatically) inlineTest.run() }, 0)
-
-// Call to avoid auto testing
-// export function dontRunInlineTestsAutomatically() { runInlineTestsAutomatically = false }
+const runInlineTests = (uniglobal.process && uniglobal.process.env && uniglobal.process.env.inlineTest) == 'true'
+if (runInlineTests) uniglobal.setTimeout(inlineTest.run, 0)
 
 // httpCall -----------------------------------------------------------------------
 interface HttpCallOptions {
@@ -398,6 +395,15 @@ function partition(o: something, fOrList: something) {
 export { partition }
 
 
+// sort ---------------------------------------------------------------------------
+function sort<T>(list: Array<T>, compareFn?: (a: T, b: T) => number): Array<T> {
+  list = [...list]
+  list.sort(compareFn)
+  return list
+}
+export { sort }
+
+
 // select -------------------------------------------------------------------------
 function select<T>(list: Array<T>, f: Predicate<T, number>): Array<T>
 function select<T>(list: Array<T>, keys: number[]): Array<T>
@@ -469,7 +475,6 @@ function keys<T>(o: something) {
   return reduce(o, [], (list: something, _v, k: something) => { list.push(k); return list })
 }
 export { keys }
-
 
 // map ----------------------------------------------------------------------------
 function map<T, R>(list: T[], f: (v: T, i: number) => R): R[]

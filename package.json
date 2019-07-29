@@ -11,6 +11,6 @@
     "fs-extra": "^7.0.1",
     "node-fetch": "^2.3.0",
     "seedrandom": "^3.0.1",
-    "source-map-support": "^0.5.10"
+    "string_decoder": "^1.2.0"
   }
 }
