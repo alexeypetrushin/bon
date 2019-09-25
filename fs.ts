@@ -4,10 +4,17 @@ import * as nodepath from 'path'
 import * as fsextra from 'fs-extra'
 import { promisify } from 'util'
 
+export type EntryType = 'directory' | 'file' | 'link'
+
 export function resolve(...paths: string[]): string { return require('path').resolve(...paths) }
 
-export async function readDirectory(path: string): Promise<string[]> {
-  return (await promisify(nodefs.readdir)(path)).map((name: string) => resolve(path, name))
+export async function readDirectory(path: string, type?: EntryType): Promise<string[]> {
+  const list = (await promisify(nodefs.readdir)(path)).map((name: string) => resolve(path, name))
+  if (!type) return list
+
+  const filtered = []
+  for (const path of list) if ((await getType(path)) == type) filtered.push(path)
+  return filtered
 }
 
 function readFile(path: string): Promise<Buffer>
@@ -76,4 +83,12 @@ export async function deleteTmpDirectory(path: string): Promise<void> {
   // `tmp` in path required for safety so you don't accidentally delete non temp directory.
   assert(/tmp|temp/i.test(path), `temp directory expected to have tmp or temp term in its path`)
   deleteDirectory(path, { recursive: true })
+}
+
+export async function getType(path: string): Promise<EntryType> {
+  const stat = await promisify(nodefs.lstat)(path)
+  if      (stat.isFile())         return 'file'
+  else if (stat.isDirectory())    return 'directory'
+  else if (stat.isSymbolicLink()) return 'link'
+  else                            throw new Error(`unknown fs entry type for '${path}'`)
 }

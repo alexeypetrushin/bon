@@ -167,10 +167,10 @@ export { md5 }
 
 // log ----------------------------------------------------------------------------
 export const debugEnabled = (uniglobal.process && uniglobal.process.env && uniglobal.process.env.debug) == 'true'
-export type ErrorLevel = 'debug' | 'info' | 'warn' | 'error'
+export type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 export interface Log {
   (message: string, short?: something, detailed?: something): void
-  (level: ErrorLevel, message: string, short?: something, detailed?: something): void
+  (level: LogLevel, message: string, short?: something, detailed?: something): void
 }
 
 function pad0(v: string | number) { return v.toString().length < 2 ? '0' + v : v }
@@ -195,7 +195,7 @@ function errorToData(error: something) { return { message: error.message, stack:
 
 // function log(user: string, message: string, short?: something, detailed?: something): string
 function log(
-  level: ErrorLevel, message: string, short?: something, detailed?: something
+  level: LogLevel, message: string, short?: something, detailed?: something
 ): string
 function log(...args: something[]): string {
   const level = ['info', 'warn', 'error', 'debug'].includes(args[0]) ? args.shift() : 'info'
@@ -251,7 +251,7 @@ function log(...args: something[]): string {
 export { log }
 
 export function logWithUser(
-  level: ErrorLevel, user: string, message: string, short?: something, detailed?: something
+  level: LogLevel, user: string, message: string, short?: something, detailed?: something
 ): string { return log(level, `${pad(user, 8)} ${message}`, short, detailed) }
 
 // Timer
