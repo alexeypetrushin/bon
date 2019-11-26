@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "lib": ["dom", "es2017"],
+    "lib": ["dom", "es2019"],
     "target": "es5",
     "rootDir": ".",
 
@@ -22,7 +22,7 @@
     "experimentalDecorators": true,
 
     "jsx": "react",
-    "jsxFactory": "tag",
+    "jsxFactory": "h"
 
     // "baseUrl": ".",
     // "paths": {

@@ -35,7 +35,7 @@ export async function writeFile(
   const directory = nodepath.dirname(path)
   if (!(await exists(directory))) await makeDirectory(directory)
   options = { ...options }
-  options.encoding = options.encoding || 'utf-8'
+  options.encoding = options.encoding || 'utf8'
 
   await promisify(nodefs.writeFile)(path, data, options)
 }

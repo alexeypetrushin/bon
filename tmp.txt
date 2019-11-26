@@ -1,0 +1,11 @@
+// stacktrace ---------------------------------------------------------------------
+const skiptrace = /^Generator\.throw \(|^Object.throw \(|^step \(|^rejected \(/
+export function stacktrace(): string[] {
+  const error = new Error()
+  const stack = (error.stack || "").split("\n")
+  stack.shift() // Removing Error line
+  stack.shift() // Removing skiptrace line
+  return stack
+    .map((line) => line.replace(/^\s*at\s+/, ''))
+    .filter((line) => !skiptrace.test(line))
+}
