@@ -1,4 +1,4 @@
-import * as fs from '../fs'
+import * as fs from '../fs-cc'
 
 export class PersistentVariable<T extends {}> {
   constructor(

@@ -22,19 +22,10 @@ export const environment: 'development' | 'production' | 'test' =
 if (!['development', 'production', 'test'].includes(environment)) throw new Error('invalid environment!')
 
 // p ------------------------------------------------------------------------------
-function map_to_json_if_defined(v: something) { return v && v.toJSON ? v.toJSON() : v }
-let util_inspect = (v: something, options: something) => v
-try { util_inspect = require('util').inspect } catch(_e) {}
+function mapToJsonIfDefined(v: something) { return v && v.toJSON ? v.toJSON() : v }
 export function p(...args: something): void {
-  const formatted = args.map((v: something) => {
-    v = deep_map(v, map_to_json_if_defined)
-    return typeof v == 'object' ? util_inspect(v, { breakLength: 80, colors: true }) : v
-  })
-  console.log(...formatted)
+  console.log(...args.map((v: something) => deepMap(v, mapToJsonIfDefined)))
 }
-
-const fetch = uniglobal.fetch || require('node-fetch')
-// util.inspect
 
 // inlineTest ---------------------------------------------------------------------
 export interface InlineTest {
@@ -42,11 +33,11 @@ export interface InlineTest {
   run(): void
 }
 
-const inline_tests: (() => void)[] = []
-export const inline_test = <InlineTest>function(fn) { inline_tests.push(fn) }
-inline_test.run = async () => {
+const inlineTests: (() => void)[] = []
+export const inlineTest = <InlineTest>function(fn) { inlineTests.push(fn) }
+inlineTest.run = async () => {
   try {
-    for(const test of inline_tests) await test()
+    for(const test of inlineTests) await test()
     log('info', 'inline tests passed')
   } catch(e) {
     console.error(e)
@@ -54,42 +45,38 @@ inline_test.run = async () => {
   }
 }
 
-const run_inline_tests = (uniglobal.process && uniglobal.process.env && uniglobal.process.env.inline_test) == 'true'
-if (run_inline_tests) uniglobal.setTimeout(inline_test.run, 0)
+const runInlineTests = (uniglobal.process && uniglobal.process.env && uniglobal.process.env.inlineTest) == 'true'
+if (runInlineTests) uniglobal.setTimeout(inlineTest.run, 0)
 
-// http_call ----------------------------------------------------------------------
+// httpCall -----------------------------------------------------------------------
 interface HttpCallOptions {
   method?:  'post' | 'get'
   headers?: { [key: string]: string | undefined }
   timeout?: number
 }
-export async function http_call<T>(url: string, body: unknown = {}, options: HttpCallOptions = {})
+export async function httpCall<T>(url: string, body: unknown = {}, options: HttpCallOptions = {})
 : Promise<T> {
-  async function call_without_timeout() {
-    try {
-      const copied_ptions = { ...{ method: 'post' }, ...options }
-      delete copied_ptions.timeout
-      const fetch = uniglobal.fetch || require('node-fetch')
-      if (!fetch) throw new Error('global.fetch not defined')
-      const result = await fetch(url, {
-        ...copied_ptions,
-        body: copied_ptions.method == 'get' ? undefined : JSON.stringify(body)
-      })
-      if (!result.ok) throw new Error(`can't call ${url} ${result.status} ${result.statusText}`)
-      return await result.json()
-    } catch (e) {
-
-    }
+  async function callWithoutTimeout() {
+    const copiedOptions = { ...{ method: 'post' }, ...options }
+    delete copiedOptions.timeout
+    const fetch = uniglobal.fetch || require('node-fetch')
+    if (!fetch) throw new Error('global.fetch not defined')
+    const result = await fetch(url, {
+      ...copiedOptions,
+      body: copiedOptions.method == 'get' ? undefined : JSON.stringify(body)
+    })
+    if (!result.ok) throw new Error(`can't call ${url} ${result.status} ${result.statusText}`)
+    return await result.json()
   }
   return new Promise((resolve, reject) => {
     if (options.timeout)
     uniglobal.setTimeout(() => reject(new Error(`request timed out ${url}`)), options.timeout)
-    call_without_timeout().then(resolve, reject)
+    callWithoutTimeout().then(resolve, reject)
   })
 }
 
-// build_url ----------------------------------------------------------------------
-export function build_url(
+// buildUrl -----------------------------------------------------------------------
+export function buildUrl(
   url: string, query: { [key: string]: string | number | undefined | null } = {}
 ): string {
   const querystring: string[] = []
@@ -114,72 +101,72 @@ export interface Assert {
   equal(a: unknown, b: unknown, message?: string | (() => string)): void
 }
 export const assert = <Assert>function(condition, message): void {
-  const message_string = message ? (message instanceof Function ? message() : message) : 'Assertion error!'
-  if (!condition) throw new Error(message_string)
+  const messageString = message ? (message instanceof Function ? message() : message) : 'Assertion error!'
+  if (!condition) throw new Error(messageString)
 }
 assert.warn = (condition, message) => { if (!condition) console.warn(message || 'Assertion error!') }
 assert.equal = (a, b, message) => {
-  if (!is_equal(a, b)) {
-    const message_string = message ? (message instanceof Function ? message() : message) :
-      `Assertion error: ${stable_json_stringify(a)} != ${stable_json_stringify(b)}`
-    throw new Error(message_string)
+  if (!isEqual(a, b)) {
+    const messageString = message ? (message instanceof Function ? message() : message) :
+      `Assertion error: ${stableJsonStringify(a)} != ${stableJsonStringify(b)}`
+    throw new Error(messageString)
   }
 }
 
-// deep_clone_and_sort ------------------------------------------------------------
+// deepCloneAndSort ---------------------------------------------------------------
 // Clone object with object properties sorted, including for nested objects
-export function deep_clone_and_sort(obj: something): something {
+export function deepCloneAndSort(obj: something): something {
   if      (obj === null || typeof obj !== 'object') return obj
-  else if (Array.isArray(obj))                      return obj.map(deep_clone_and_sort)
-  else if ('toJSON' in obj)                         return deep_clone_and_sort(obj.toJSON())
+  else if (Array.isArray(obj))                      return obj.map(deepCloneAndSort)
+  else if ('toJSON' in obj)                         return deepCloneAndSort(obj.toJSON())
   else                                              return Object.assign({},
       ...Object.entries(obj)
-        .sort(([key_a], [key_b]) => key_a.localeCompare(key_b))
-        .map(([k, v]) => ({ [k]: deep_clone_and_sort(v) })
+        .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
+        .map(([k, v]) => ({ [k]: deepCloneAndSort(v) })
     ))
 }
 
-// stable_json_stringify ----------------------------------------------------------
+// stableJsonStringify ------------------------------------------------------------
 // https://stackoverflow.com/questions/42491226/is-json-stringify-deterministic-in-v8
-export function stable_json_stringify(obj: unknown): string { return JSON.stringify(deep_clone_and_sort(obj)) }
+export function stableJsonStringify(obj: unknown): string { return JSON.stringify(deepCloneAndSort(obj)) }
 
-// is_equal -----------------------------------------------------------------------
-export function is_equal(a: unknown, b: unknown): boolean {
-  return stable_json_stringify(a) === stable_json_stringify(b)
+// isEqual ------------------------------------------------------------------------
+export function isEqual(a: unknown, b: unknown): boolean {
+  return stableJsonStringify(a) === stableJsonStringify(b)
 }
 
-// deep_map -----------------------------------------------------------------------
-export function deep_map(obj: something, map: (o: something) => something): something {
+// deepMap ------------------------------------------------------------------------
+export function deepMap(obj: something, map: (o: something) => something): something {
   obj = map(obj)
   if      (obj === null || typeof obj !== 'object') return obj
-  else if ('map' in obj)                            return obj.map((v: something) => deep_map(v, map))
+  else if ('map' in obj)                            return obj.map((v: something) => deepMap(v, map))
   else                                              return Object.assign({},
       ...Object.entries(obj)
-        .map(([k, v]) => ({ [k]: deep_map(v, map) })
+        .map(([k, v]) => ({ [k]: deepMap(v, map) })
     ))
 }
-inline_test(() => {
+inlineTest(() => {
   class Wrapper<T> {
     constructor(readonly v: T) {}
     toJSON() { return this.v }
   }
   const a = new Wrapper([1, 2])
-  assert.equal(deep_map(a, map_to_json_if_defined), [1, 2])
+  assert.equal(deepMap(a, mapToJsonIfDefined), [1, 2])
 
-  const a_l2 = new Wrapper([a, 3])
-  assert.equal(deep_map(a_l2, map_to_json_if_defined), [[1, 2], 3])
+  const aL2 = new Wrapper([a, 3])
+  assert.equal(deepMap(aL2, mapToJsonIfDefined), [[1, 2], 3])
 })
 
 // md5 ----------------------------------------------------------------------------
 let md5: (s: string) => string
 try {
-  const { create_hash } = require('crypto')
-  md5 = (data: string) => create_hash('md5').update(data).digest('hex')
+  const { createHash } = require('crypto')
+  md5 = (data: string) => createHash('md5').update(data).digest('hex')
 } catch(e) { md5 = () => { throw new Error("md5 not implemented") } }
 export { md5 }
 
 // log ----------------------------------------------------------------------------
-export const debug_enabled = (uniglobal.process && uniglobal.process.env && uniglobal.process.env.debug) == 'true'
+export const debugEnabled = (uniglobal.process && uniglobal.process.env && uniglobal.process.env.debug) == 'true'
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 export interface Log {
   (message: string, short?: something, detailed?: something): void
@@ -187,7 +174,7 @@ export interface Log {
 }
 
 function pad0(v: string | number) { return v.toString().length < 2 ? '0' + v : v }
-export function get_formatted_time(time: number, withSeconds = true) {
+export function getFormattedTime(time: number, withSeconds = true) {
   let date = new Date(time)
   // year = date.getFullYear()
   return `${pad0(date.getMonth() + 1)}/${pad0(date.getDate())} `
@@ -202,11 +189,9 @@ try {
   inspect = (o) => util.inspect(o, { depth: null, breakLength: Infinity }).replace(/^'|'$/g, '')
 } catch(e) { inspect = (o) => o }
 
-const level_replacements: { [key: string]: string } =
+const levelReplacements: { [key: string]: string } =
   { debug: 'debug', info: '     ', warn: 'warn ', error: 'error' }
-function error_to_data(error: something) {
-  return { message: error.message, stack: clean_stack(error.stack || '') }
-}
+function errorToData(error: something) { return { message: error.message, stack: cleanStack(error.stack || '') } }
 
 // function log(user: string, message: string, short?: something, detailed?: something): string
 function log(
@@ -214,31 +199,31 @@ function log(
 ): string
 function log(...args: something[]): string {
   const level = ['info', 'warn', 'error', 'debug'].includes(args[0]) ? args.shift() : 'info'
-  if (level == 'debug' && !debug_enabled) return ''
+  if (level == 'debug' && !debugEnabled) return ''
 
   let [message, short, detailed] = args
   // user = user || ''
-  let buff: something[] = [level_replacements[level]]
+  let buff: something[] = [levelReplacements[level]]
 
   // buff.push(pad(user, 8))
 
-  if (environment != 'development') buff.push(get_formatted_time(Date.now()))
+  if (environment != 'development') buff.push(getFormattedTime(Date.now()))
   buff.push(message)
 
   // Handling errors
   let error: something = null
   if (short instanceof Error) {
     error = short
-    if (environment != 'development') buff.push(inspect(error_to_data(error)))
+    if (environment != 'development') buff.push(inspect(errorToData(error)))
   } else if (short !== null && short !== undefined) buff.push(inspect(short))
 
   if (detailed instanceof Error) {
     error = detailed
-    if (environment != 'development') buff.push(inspect(error_to_data(error)))
+    if (environment != 'development') buff.push(inspect(errorToData(error)))
   } else
     if (detailed !== null && detailed !== undefined && environment != 'development') buff.push(inspect(detailed))
 
-  buff = buff.map((v: something) => deep_map(v, map_to_json_if_defined))
+  buff = buff.map((v: something) => deepMap(v, mapToJsonIfDefined))
 
   // Adding full username in production
   // if (environment != 'development') buff.push(user)
@@ -246,7 +231,7 @@ function log(...args: something[]): string {
   // Generating id
   let id = ''
   if (level != 'info') {
-    id = md5(stable_json_stringify(args)).substr(0, 6)
+    id = md5(stableJsonStringify(args)).substr(0, 6)
     buff.push(id)
   }
 
@@ -255,19 +240,19 @@ function log(...args: something[]): string {
 
   // Printing error in development
   if (environment == 'development' && error) {
-    const clean_error = new Error(error.message)
-    clean_error.stack = clean_stack(error.stack || '')
+    const cleanError = new Error(error.message)
+    cleanError.stack = cleanStack(error.stack || '')
     console.log('')
-    console.error(clean_error)
+    console.error(cleanError)
     console.log('')
   }
   return id
 }
 export { log }
 
-// export function logWithUser(
-//   level: LogLevel, user: string, message: string, short?: something, detailed?: something
-// ): string { return log(level, `${pad(user, 8)} ${message}`, short, detailed) }
+export function logWithUser(
+  level: LogLevel, user: string, message: string, short?: something, detailed?: something
+): string { return log(level, `${pad(user, 8)} ${message}`, short, detailed) }
 
 // Timer
 export function timer(): () => number {
@@ -275,10 +260,10 @@ export function timer(): () => number {
   return function(){ return Date.now() - start }
 }
 
-// clean_stack --------------------------------------------------------------------
-export let clean_stack: (stack: string) => string
+// cleanStack ---------------------------------------------------------------------
+export let cleanStack: (stack: string) => string
 {
-  const stack_skip_re = new RegExp([
+  const stackSkipRe = new RegExp([
     '/node_modules/',
     'internal/(modules|bootstrap|process)',
     'at new Promise \\(<anonymous>\\)',
@@ -287,11 +272,11 @@ export let clean_stack: (stack: string) => string
     'at __awaiter \\(',
     'at Object.exports.assert \\('
   ].join('|'))
-  clean_stack = (stack) => {
+  cleanStack = (stack) => {
     const lines = stack
       .split("\n")
       .filter((line) => {
-        return !stack_skip_re.test(line)
+        return !stackSkipRe.test(line)
       })
       .map((line, i) =>
         i == 0 ? line : line.replace(/([^\/]*).*(\/[^\/]+\/[^\/]+\/[^\/]+)/, (_match, s1, s2) => s1 + '...' + s2)
@@ -301,7 +286,7 @@ export let clean_stack: (stack: string) => string
 }
 
 uniglobal.process && uniglobal.process.on('uncaughtException', function(error: something) {
-  error.stack = clean_stack(error.stack)
+  error.stack = cleanStack(error.stack)
   console.log('')
   console.error(error)
   process.exit()
@@ -349,11 +334,11 @@ Object.defineProperty(Promise.prototype, "cmap", { configurable: false, enumerab
 
 type Predicate<V, K> = (value: V, key: K) => boolean
 
-// type OMap<T> = { [key: string]: T }
+type OMap<T> = { [key: string]: T }
 
 
 // length -------------------------------------------------------------------------
-export function length<T>(o: Array<T> | { [key: string]: T } | String | string): number {
+export function length<T>(o: Array<T> | OMap<T> | String | string): number {
   if (o instanceof Array)                               return o.length
   else if (o instanceof String || typeof o == 'string') return o.length
   else {
@@ -364,10 +349,8 @@ export function length<T>(o: Array<T> | { [key: string]: T } | String | string):
 }
 
 
-// is_empty -----------------------------------------------------------------------
-export function is_empty<T>(o: Array<T> | { [key: string]: T } | String | string): boolean {
-  return length(o) == 0
-}
+// isEmpty ------------------------------------------------------------------------
+export function isEmpty<T>(o: Array<T> | OMap<T> | String | string): boolean { return length(o) == 0 }
 
 
 // take ---------------------------------------------------------------------------
@@ -375,47 +358,20 @@ export function take<T>(list: Array<T>, n: number) { return list.slice(0, n) }
 
 
 // last ---------------------------------------------------------------------------
-export function last<T>(list: Array<T>): T
-export function last<T>(list: Array<T>, n: number): T[]
-export function last<T>(list: Array<T>, n?: number) {
-  if (n === undefined) {
-    if (list.length < 1) throw new Error(`can't get last elements from empty list`)
-    return list[list.length - 1]
-  } else {
-    if (list.length < n) throw new Error(`can't get last ${n} elements from list of length ${list.length}`)
-    else return list.slice(list.length - n, list.length)
-  }
+export function last<T>(list: Array<T>) {
+  if (list.length == 0) throw new Error("can't get last on empty list")
+  else return list[list.length - 1]
 }
 
 
 // each ---------------------------------------------------------------------------
 function each<T>(list: T[], f: (v: T, i: number) => void): void
 function each<M extends {}, K extends keyof M>(map: M, f: (v: M[K], k: K) => void): void
-function each<T>(o: T[] | { [key: string]: T }, f: (v: T, i: something) => void): void {
+function each<T>(o: T[] | OMap<T>, f: (v: T, i: something) => void): void {
   if (o instanceof Array) for(let i = 0; i < o.length; i++) f(o[i], i)
   else                    for(const k in o) if (o.hasOwnProperty(k)) f(o[k], k)
 }
 export { each }
-
-
-// find ---------------------------------------------------------------------------
-function find<T>(list: T[], v: T): T | undefined
-function find<T>(list: T[], f: (v: T, i: number) => boolean): T | undefined
-function find<T>(map: { [key: string]: T }, f: (v: T, k: string) => boolean): T | undefined
-function find<T>(o: T[] | { [key: string]: T }, finder: T | ((v: T, i: something) => boolean)): T | undefined {
-  const predicate = finder instanceof Function ? finder : (v: T) => v == finder
-  if (o instanceof Array) for(let i = 0; i < o.length; i++) if (predicate(o[i], i)) return o[i]
-  else                    for(const k in o) if (o.hasOwnProperty(k)) if (predicate(o[k], k)) return o[k]
-  return undefined
-}
-export { find }
-
-// has ----------------------------------------------------------------------------
-function has<T>(list: T[], v: T): boolean
-function has<T>(list: T[], f: (v: T, i: number) => boolean): boolean
-function has<T>(map: { [key: string]: T }, f: (v: T, k: string) => boolean): boolean
-function has(o: something, finder: something): boolean { return !!find(o, finder) }
-export { has }
 
 
 // partition ----------------------------------------------------------------------
@@ -423,15 +379,15 @@ function partition<T>(list: Array<T>, f: Predicate<T, number>): [Array<T>, Array
 function partition<T>(list: Array<T>, keys: number[]): [Array<T>, Array<T>]
 function partition<M extends {}, K extends keyof M>(map: M, f: Predicate<M[keyof M], keyof M>): [M, M]
 function partition<M extends {}, K extends keyof M>(map: M, keys: (keyof M)[]): [Pick<M, K>, Exclude<M, K>]
-function partition(o: something, splitter: something) {
+function partition(o: something, fOrList: something) {
   if (o instanceof Array) {
     const selected = new Array(), rejected = new Array()
-    const f = splitter instanceof Function ? splitter : (_v: something, i: something) => splitter.includes(i)
+    const f = fOrList instanceof Function ? fOrList : (_v: something, i: something) => fOrList.includes(i)
     each(o, (v, i) => f(v, i) ? selected.push(v) : rejected.push(v))
     return [selected, rejected]
   } else {
     const selected = {} as something, rejected = {} as something
-    const f = splitter instanceof Function ? splitter : (_v: something, k: something) => splitter.includes(k)
+    const f = fOrList instanceof Function ? fOrList : (_v: something, k: something) => fOrList.includes(k)
     each(o, (v, k) => f(v, k) ? selected[k] = v : rejected[k] = v)
     return [selected, rejected]
   }
@@ -440,9 +396,9 @@ export { partition }
 
 
 // sort ---------------------------------------------------------------------------
-function sort<T>(list: Array<T>, compare_fn?: (a: T, b: T) => number): Array<T> {
+function sort<T>(list: Array<T>, compareFn?: (a: T, b: T) => number): Array<T> {
   list = [...list]
-  list.sort(compare_fn)
+  list.sort(compareFn)
   return list
 }
 export { sort }
@@ -451,19 +407,11 @@ export { sort }
 // select -------------------------------------------------------------------------
 function select<T>(list: Array<T>, f: Predicate<T, number>): Array<T>
 function select<T>(list: Array<T>, keys: number[]): Array<T>
-function select<T>(map: { [key: string]: T }, f: Predicate<T, string>): { [key: string]: T }
-function select<T>(map: { [key: string]: T }, keys: string[]): { [key: string]: T }
+function select<M extends {}>(map: M, f: Predicate<M[keyof M], keyof M>): M
+function select<M extends {}, K extends keyof M>(map: M, keys: (keyof M)[]): Pick<M, K>
 function select(o: something, f: something) { return partition(o, f)[0] }
 export { select }
 
-
-// reject -------------------------------------------------------------------------
-function reject<T>(list: Array<T>, f: Predicate<T, number>): Array<T>
-function reject<T>(list: Array<T>, keys: number[]): Array<T>
-function reject<T>(map: { [key: string]: T }, f: Predicate<T, string>): { [key: string]: T }
-function reject<T>(map: { [key: string]: T }, keys: string[]): { [key: string]: T }
-function reject(o: something, f: something) { return partition(o, f)[1] }
-export { reject }
 
 // uniq ---------------------------------------------------------------------------
 export function uniq<T>(list: Array<T>): Array<T> { return list.filter((v, i, a) => a.indexOf(v) === i) }
@@ -480,9 +428,9 @@ export function uniq<T>(list: Array<T>): Array<T> { return list.filter((v, i, a)
 // remove -------------------------------------------------------------------------
 function remove<T>(list: Array<T>, i: number): T | undefined
 function remove<T>(list: Array<T>, f: Predicate<T, number>): Array<T>
-function remove<T>(map: { [key: string]: T }, i: string): T | undefined
-function remove<T>(map: { [key: string]: T }, f: Predicate<T, string>): { [key: string]: T }
-function remove<T>(o: Array<T> | { [key: string]: T }, f: something) {
+function remove<T>(map: OMap<T>, i: string): T | undefined
+function remove<T>(map: OMap<T>, f: Predicate<T, string>): OMap<T>
+function remove<T>(o: Array<T> | OMap<T>, f: something) {
   if (o instanceof Array) {
     if (f instanceof Function) {
       const [deleted, remained] = partition(o, f)
@@ -512,10 +460,8 @@ export { remove }
 
 // reduce -------------------------------------------------------------------------
 function reduce<A, T>(list: T[], accumulator: A, f: (accumulator: A, v: T, key: number) => A): A
-function reduce<A, T>(map: { [key: string]: T }, accumulator: A, f: (accumulator: A, v: T, key: string) => A): A
-function reduce<A, T>(
-  o: T[] | { [key: string]: T }, accumulator: A, f: (accumulator: A, v: T, key: something) => A
-) {
+function reduce<A, T>(map: OMap<T>, accumulator: A, f: (accumulator: A, v: T, key: string) => A): A
+function reduce<A, T>(o: T[] | OMap<T>, accumulator: A, f: (accumulator: A, v: T, key: something) => A) {
   each(o as something, (v: something, i) => accumulator = f(accumulator, v, i))
   return accumulator
 }
@@ -524,27 +470,16 @@ export { reduce }
 
 // keys ---------------------------------------------------------------------------
 function keys<T>(list: Array<T>): number[]
-// Adding `& string` because otherwise it would infer the type as `(string | number)[]`
-// see https://stackoverflow.com/questions/51808160/keyof-inferring-string-number-when-key-is-only-a-string
-function keys<T, O extends { [key: string]: T }>(map: O): (keyof O & string)[]
+function keys<T, O extends OMap<T>>(map: O): (keyof O)[]
 function keys<T>(o: something) {
   return reduce(o, [], (list: something, _v, k: something) => { list.push(k); return list })
 }
 export { keys }
 
-
-// values -------------------------------------------------------------------------
-function values<T>(list: Array<T>): T[]
-function values<T>(map: { [key: string]: T }): T[]
-function values(o: something) {
-  return reduce(o, [], (list: something, v) => { list.push(v); return list })
-}
-export { values }
-
 // map ----------------------------------------------------------------------------
 function map<T, R>(list: T[], f: (v: T, i: number) => R): R[]
 function map<M extends {}, K extends keyof M, R>(map: M, f: (v: M[K], k: K) => R): { [key in K]: R }
-function map<T, R>(o: T[] | { [key: string]: T }, f: (v: T, k: something) => R) {
+function map<T, R>(o: T[] | OMap<T>, f: (v: T, k: something) => R) {
   if (o instanceof Array) return o.map(f)
   else {
     const mapped = {} as something
@@ -576,21 +511,11 @@ export function shuffle<T>(list: T[], seed?: number | string): T[] {
 // seedrandom ---------------------------------------------------------------------
 let seedrandom: (seed: number | string) => (() => number)
 {
-  let seedrandom_lib: something = undefined
+  let seedrandomLib: something = undefined
   seedrandom = (seed) => {
     // Code for proper random generator is not simple, the library needed
-    if (seedrandom_lib === undefined) seedrandom_lib = require('seedrandom')
-    return seedrandom_lib('' + seed)
+    if (seedrandomLib === undefined) seedrandomLib = require('seedrandom')
+    return seedrandomLib('' + seed)
   }
 }
 export { seedrandom }
-
-
-
-// CustomError --------------------------------------------------------------------
-export class CustomError extends Error {
-  constructor(message: string) {
-    super(message)
-    Object.setPrototypeOf(this, CustomError.prototype)
-  }
-}

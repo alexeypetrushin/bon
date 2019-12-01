@@ -1,17 +1,4 @@
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 var __assign = (this && this.__assign) || function () {
     __assign = Object.assign || function(t) {
         for (var s, i = 1, n = arguments.length; i < n; i++) {
@@ -86,38 +73,28 @@ exports.environment = (uniglobal.process && uniglobal.process.env && uniglobal.p
 if (!['development', 'production', 'test'].includes(exports.environment))
     throw new Error('invalid environment!');
 // p ------------------------------------------------------------------------------
-function map_to_json_if_defined(v) { return v && v.toJSON ? v.toJSON() : v; }
-var util_inspect = function (v, options) { return v; };
-try {
-    util_inspect = require('util').inspect;
-}
-catch (_e) { }
+function mapToJsonIfDefined(v) { return v && v.toJSON ? v.toJSON() : v; }
 function p() {
     var args = [];
     for (var _i = 0; _i < arguments.length; _i++) {
         args[_i] = arguments[_i];
     }
-    var formatted = args.map(function (v) {
-        v = deep_map(v, map_to_json_if_defined);
-        return typeof v == 'object' ? util_inspect(v, { breakLength: 80, colors: true }) : v;
-    });
-    console.log.apply(console, formatted);
+    console.log.apply(console, args.map(function (v) { return deepMap(v, mapToJsonIfDefined); }));
 }
 exports.p = p;
-var fetch = uniglobal.fetch || require('node-fetch');
-var inline_tests = [];
-exports.inline_test = function (fn) { inline_tests.push(fn); };
-exports.inline_test.run = function () { return __awaiter(void 0, void 0, void 0, function () {
-    var _i, inline_tests_1, test, e_1;
+var inlineTests = [];
+exports.inlineTest = function (fn) { inlineTests.push(fn); };
+exports.inlineTest.run = function () { return __awaiter(void 0, void 0, void 0, function () {
+    var _i, inlineTests_1, test, e_1;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
                 _a.trys.push([0, 5, , 6]);
-                _i = 0, inline_tests_1 = inline_tests;
+                _i = 0, inlineTests_1 = inlineTests;
                 _a.label = 1;
             case 1:
-                if (!(_i < inline_tests_1.length)) return [3 /*break*/, 4];
-                test = inline_tests_1[_i];
+                if (!(_i < inlineTests_1.length)) return [3 /*break*/, 4];
+                test = inlineTests_1[_i];
                 return [4 /*yield*/, test()];
             case 2:
                 _a.sent();
@@ -137,36 +114,31 @@ exports.inline_test.run = function () { return __awaiter(void 0, void 0, void 0,
         }
     });
 }); };
-var run_inline_tests = (uniglobal.process && uniglobal.process.env && uniglobal.process.env.inline_test) == 'true';
-if (run_inline_tests)
-    uniglobal.setTimeout(exports.inline_test.run, 0);
-function http_call(url, body, options) {
+var runInlineTests = (uniglobal.process && uniglobal.process.env && uniglobal.process.env.inlineTest) == 'true';
+if (runInlineTests)
+    uniglobal.setTimeout(exports.inlineTest.run, 0);
+function httpCall(url, body, options) {
     if (body === void 0) { body = {}; }
     if (options === void 0) { options = {}; }
     return __awaiter(this, void 0, void 0, function () {
-        function call_without_timeout() {
+        function callWithoutTimeout() {
             return __awaiter(this, void 0, void 0, function () {
-                var copied_ptions, fetch_1, result, e_2;
+                var copiedOptions, fetch, result;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0:
-                            _a.trys.push([0, 3, , 4]);
-                            copied_ptions = __assign({ method: 'post' }, options);
-                            delete copied_ptions.timeout;
-                            fetch_1 = uniglobal.fetch || require('node-fetch');
-                            if (!fetch_1)
+                            copiedOptions = __assign({ method: 'post' }, options);
+                            delete copiedOptions.timeout;
+                            fetch = uniglobal.fetch || require('node-fetch');
+                            if (!fetch)
                                 throw new Error('global.fetch not defined');
-                            return [4 /*yield*/, fetch_1(url, __assign(__assign({}, copied_ptions), { body: copied_ptions.method == 'get' ? undefined : JSON.stringify(body) }))];
+                            return [4 /*yield*/, fetch(url, __assign(__assign({}, copiedOptions), { body: copiedOptions.method == 'get' ? undefined : JSON.stringify(body) }))];
                         case 1:
                             result = _a.sent();
                             if (!result.ok)
                                 throw new Error("can't call " + url + " " + result.status + " " + result.statusText);
                             return [4 /*yield*/, result.json()];
                         case 2: return [2 /*return*/, _a.sent()];
-                        case 3:
-                            e_2 = _a.sent();
-                            return [3 /*break*/, 4];
-                        case 4: return [2 /*return*/];
                     }
                 });
             });
@@ -175,14 +147,14 @@ function http_call(url, body, options) {
             return [2 /*return*/, new Promise(function (resolve, reject) {
                     if (options.timeout)
                         uniglobal.setTimeout(function () { return reject(new Error("request timed out " + url)); }, options.timeout);
-                    call_without_timeout().then(resolve, reject);
+                    callWithoutTimeout().then(resolve, reject);
                 })];
         });
     });
 }
-exports.http_call = http_call;
-// build_url ----------------------------------------------------------------------
-function build_url(url, query) {
+exports.httpCall = httpCall;
+// buildUrl -----------------------------------------------------------------------
+function buildUrl(url, query) {
     if (query === void 0) { query = {}; }
     var querystring = [];
     for (var key in query) {
@@ -195,7 +167,7 @@ function build_url(url, query) {
     else
         return url;
 }
-exports.build_url = build_url;
+exports.buildUrl = buildUrl;
 // sleep --------------------------------------------------------------------------
 function sleep(ms) {
     return __awaiter(this, void 0, void 0, function () {
@@ -206,68 +178,68 @@ function sleep(ms) {
 }
 exports.sleep = sleep;
 exports.assert = function (condition, message) {
-    var message_string = message ? (message instanceof Function ? message() : message) : 'Assertion error!';
+    var messageString = message ? (message instanceof Function ? message() : message) : 'Assertion error!';
     if (!condition)
-        throw new Error(message_string);
+        throw new Error(messageString);
 };
 exports.assert.warn = function (condition, message) { if (!condition)
     console.warn(message || 'Assertion error!'); };
 exports.assert.equal = function (a, b, message) {
-    if (!is_equal(a, b)) {
-        var message_string = message ? (message instanceof Function ? message() : message) :
-            "Assertion error: " + stable_json_stringify(a) + " != " + stable_json_stringify(b);
-        throw new Error(message_string);
+    if (!isEqual(a, b)) {
+        var messageString = message ? (message instanceof Function ? message() : message) :
+            "Assertion error: " + stableJsonStringify(a) + " != " + stableJsonStringify(b);
+        throw new Error(messageString);
     }
 };
-// deep_clone_and_sort ------------------------------------------------------------
+// deepCloneAndSort ---------------------------------------------------------------
 // Clone object with object properties sorted, including for nested objects
-function deep_clone_and_sort(obj) {
+function deepCloneAndSort(obj) {
     if (obj === null || typeof obj !== 'object')
         return obj;
     else if (Array.isArray(obj))
-        return obj.map(deep_clone_and_sort);
+        return obj.map(deepCloneAndSort);
     else if ('toJSON' in obj)
-        return deep_clone_and_sort(obj.toJSON());
+        return deepCloneAndSort(obj.toJSON());
     else
         return Object.assign.apply(Object, __spreadArrays([{}], Object.entries(obj)
             .sort(function (_a, _b) {
-            var key_a = _a[0];
-            var key_b = _b[0];
-            return key_a.localeCompare(key_b);
+            var keyA = _a[0];
+            var keyB = _b[0];
+            return keyA.localeCompare(keyB);
         })
             .map(function (_a) {
             var _b;
             var k = _a[0], v = _a[1];
-            return (_b = {}, _b[k] = deep_clone_and_sort(v), _b);
+            return (_b = {}, _b[k] = deepCloneAndSort(v), _b);
         })));
 }
-exports.deep_clone_and_sort = deep_clone_and_sort;
-// stable_json_stringify ----------------------------------------------------------
+exports.deepCloneAndSort = deepCloneAndSort;
+// stableJsonStringify ------------------------------------------------------------
 // https://stackoverflow.com/questions/42491226/is-json-stringify-deterministic-in-v8
-function stable_json_stringify(obj) { return JSON.stringify(deep_clone_and_sort(obj)); }
-exports.stable_json_stringify = stable_json_stringify;
-// is_equal -----------------------------------------------------------------------
-function is_equal(a, b) {
-    return stable_json_stringify(a) === stable_json_stringify(b);
+function stableJsonStringify(obj) { return JSON.stringify(deepCloneAndSort(obj)); }
+exports.stableJsonStringify = stableJsonStringify;
+// isEqual ------------------------------------------------------------------------
+function isEqual(a, b) {
+    return stableJsonStringify(a) === stableJsonStringify(b);
 }
-exports.is_equal = is_equal;
-// deep_map -----------------------------------------------------------------------
-function deep_map(obj, map) {
+exports.isEqual = isEqual;
+// deepMap ------------------------------------------------------------------------
+function deepMap(obj, map) {
     obj = map(obj);
     if (obj === null || typeof obj !== 'object')
         return obj;
     else if ('map' in obj)
-        return obj.map(function (v) { return deep_map(v, map); });
+        return obj.map(function (v) { return deepMap(v, map); });
     else
         return Object.assign.apply(Object, __spreadArrays([{}], Object.entries(obj)
             .map(function (_a) {
             var _b;
             var k = _a[0], v = _a[1];
-            return (_b = {}, _b[k] = deep_map(v, map), _b);
+            return (_b = {}, _b[k] = deepMap(v, map), _b);
         })));
 }
-exports.deep_map = deep_map;
-exports.inline_test(function () {
+exports.deepMap = deepMap;
+exports.inlineTest(function () {
     var Wrapper = /** @class */ (function () {
         function Wrapper(v) {
             this.v = v;
@@ -276,31 +248,31 @@ exports.inline_test(function () {
         return Wrapper;
     }());
     var a = new Wrapper([1, 2]);
-    exports.assert.equal(deep_map(a, map_to_json_if_defined), [1, 2]);
-    var a_l2 = new Wrapper([a, 3]);
-    exports.assert.equal(deep_map(a_l2, map_to_json_if_defined), [[1, 2], 3]);
+    exports.assert.equal(deepMap(a, mapToJsonIfDefined), [1, 2]);
+    var aL2 = new Wrapper([a, 3]);
+    exports.assert.equal(deepMap(aL2, mapToJsonIfDefined), [[1, 2], 3]);
 });
 // md5 ----------------------------------------------------------------------------
 var md5;
 exports.md5 = md5;
 try {
-    var create_hash_1 = require('crypto').create_hash;
-    exports.md5 = md5 = function (data) { return create_hash_1('md5').update(data).digest('hex'); };
+    var createHash_1 = require('crypto').createHash;
+    exports.md5 = md5 = function (data) { return createHash_1('md5').update(data).digest('hex'); };
 }
 catch (e) {
     exports.md5 = md5 = function () { throw new Error("md5 not implemented"); };
 }
 // log ----------------------------------------------------------------------------
-exports.debug_enabled = (uniglobal.process && uniglobal.process.env && uniglobal.process.env.debug) == 'true';
+exports.debugEnabled = (uniglobal.process && uniglobal.process.env && uniglobal.process.env.debug) == 'true';
 function pad0(v) { return v.toString().length < 2 ? '0' + v : v; }
-function get_formatted_time(time, withSeconds) {
+function getFormattedTime(time, withSeconds) {
     if (withSeconds === void 0) { withSeconds = true; }
     var date = new Date(time);
     // year = date.getFullYear()
     return pad0(date.getMonth() + 1) + "/" + pad0(date.getDate()) + " "
         + (pad0(date.getHours()) + ":" + pad0(date.getMinutes()) + (withSeconds ? ':' + pad0(date.getSeconds()) : ''));
 }
-exports.get_formatted_time = get_formatted_time;
+exports.getFormattedTime = getFormattedTime;
 function pad(v, n) { return v.substring(0, n).padEnd(n); }
 try {
     var util_1 = require('util');
@@ -309,48 +281,46 @@ try {
 catch (e) {
     exports.inspect = function (o) { return o; };
 }
-var level_replacements = { debug: 'debug', info: '     ', warn: 'warn ', error: 'error' };
-function error_to_data(error) {
-    return { message: error.message, stack: exports.clean_stack(error.stack || '') };
-}
+var levelReplacements = { debug: 'debug', info: '     ', warn: 'warn ', error: 'error' };
+function errorToData(error) { return { message: error.message, stack: exports.cleanStack(error.stack || '') }; }
 function log() {
     var args = [];
     for (var _i = 0; _i < arguments.length; _i++) {
         args[_i] = arguments[_i];
     }
     var level = ['info', 'warn', 'error', 'debug'].includes(args[0]) ? args.shift() : 'info';
-    if (level == 'debug' && !exports.debug_enabled)
+    if (level == 'debug' && !exports.debugEnabled)
         return '';
     var message = args[0], short = args[1], detailed = args[2];
     // user = user || ''
-    var buff = [level_replacements[level]];
+    var buff = [levelReplacements[level]];
     // buff.push(pad(user, 8))
     if (exports.environment != 'development')
-        buff.push(get_formatted_time(Date.now()));
+        buff.push(getFormattedTime(Date.now()));
     buff.push(message);
     // Handling errors
     var error = null;
     if (short instanceof Error) {
         error = short;
         if (exports.environment != 'development')
-            buff.push(exports.inspect(error_to_data(error)));
+            buff.push(exports.inspect(errorToData(error)));
     }
     else if (short !== null && short !== undefined)
         buff.push(exports.inspect(short));
     if (detailed instanceof Error) {
         error = detailed;
         if (exports.environment != 'development')
-            buff.push(exports.inspect(error_to_data(error)));
+            buff.push(exports.inspect(errorToData(error)));
     }
     else if (detailed !== null && detailed !== undefined && exports.environment != 'development')
         buff.push(exports.inspect(detailed));
-    buff = buff.map(function (v) { return deep_map(v, map_to_json_if_defined); });
+    buff = buff.map(function (v) { return deepMap(v, mapToJsonIfDefined); });
     // Adding full username in production
     // if (environment != 'development') buff.push(user)
     // Generating id
     var id = '';
     if (level != 'info') {
-        id = md5(stable_json_stringify(args)).substr(0, 6);
+        id = md5(stableJsonStringify(args)).substr(0, 6);
         buff.push(id);
     }
     // Printing
@@ -358,18 +328,17 @@ function log() {
     uniglobal.console[level].apply(uniglobal.console, buff);
     // Printing error in development
     if (exports.environment == 'development' && error) {
-        var clean_error = new Error(error.message);
-        clean_error.stack = exports.clean_stack(error.stack || '');
+        var cleanError = new Error(error.message);
+        cleanError.stack = exports.cleanStack(error.stack || '');
         console.log('');
-        console.error(clean_error);
+        console.error(cleanError);
         console.log('');
     }
     return id;
 }
 exports.log = log;
-// export function logWithUser(
-//   level: LogLevel, user: string, message: string, short?: something, detailed?: something
-// ): string { return log(level, `${pad(user, 8)} ${message}`, short, detailed) }
+function logWithUser(level, user, message, short, detailed) { return log(level, pad(user, 8) + " " + message, short, detailed); }
+exports.logWithUser = logWithUser;
 // Timer
 function timer() {
     var start = Date.now();
@@ -377,7 +346,7 @@ function timer() {
 }
 exports.timer = timer;
 {
-    var stack_skip_re_1 = new RegExp([
+    var stackSkipRe_1 = new RegExp([
         '/node_modules/',
         'internal/(modules|bootstrap|process)',
         'at new Promise \\(<anonymous>\\)',
@@ -386,11 +355,11 @@ exports.timer = timer;
         'at __awaiter \\(',
         'at Object.exports.assert \\('
     ].join('|'));
-    exports.clean_stack = function (stack) {
+    exports.cleanStack = function (stack) {
         var lines = stack
             .split("\n")
             .filter(function (line) {
-            return !stack_skip_re_1.test(line);
+            return !stackSkipRe_1.test(line);
         })
             .map(function (line, i) {
             return i == 0 ? line : line.replace(/([^\/]*).*(\/[^\/]+\/[^\/]+\/[^\/]+)/, function (_match, s1, s2) { return s1 + '...' + s2; });
@@ -399,7 +368,7 @@ exports.timer = timer;
     };
 }
 uniglobal.process && uniglobal.process.on('uncaughtException', function (error) {
-    error.stack = exports.clean_stack(error.stack);
+    error.stack = exports.cleanStack(error.stack);
     console.log('');
     console.error(error);
     process.exit();
@@ -420,7 +389,6 @@ exports.once = once;
 ;
 Promise.prototype.toJSON = function () { return 'Promise'; };
 Object.defineProperty(Promise.prototype, "cmap", { configurable: false, enumerable: false });
-// type OMap<T> = { [key: string]: T }
 // length -------------------------------------------------------------------------
 function length(o) {
     if (o instanceof Array)
@@ -436,26 +404,18 @@ function length(o) {
     }
 }
 exports.length = length;
-// is_empty -----------------------------------------------------------------------
-function is_empty(o) {
-    return length(o) == 0;
-}
-exports.is_empty = is_empty;
+// isEmpty ------------------------------------------------------------------------
+function isEmpty(o) { return length(o) == 0; }
+exports.isEmpty = isEmpty;
 // take ---------------------------------------------------------------------------
 function take(list, n) { return list.slice(0, n); }
 exports.take = take;
-function last(list, n) {
-    if (n === undefined) {
-        if (list.length < 1)
-            throw new Error("can't get last elements from empty list");
+// last ---------------------------------------------------------------------------
+function last(list) {
+    if (list.length == 0)
+        throw new Error("can't get last on empty list");
+    else
         return list[list.length - 1];
-    }
-    else {
-        if (list.length < n)
-            throw new Error("can't get last " + n + " elements from list of length " + list.length);
-        else
-            return list.slice(list.length - n, list.length);
-    }
 }
 exports.last = last;
 function each(o, f) {
@@ -468,48 +428,30 @@ function each(o, f) {
                 f(o[k], k);
 }
 exports.each = each;
-function find(o, finder) {
-    var predicate = finder instanceof Function ? finder : function (v) { return v == finder; };
-    if (o instanceof Array)
-        for (var i = 0; i < o.length; i++)
-            if (predicate(o[i], i))
-                return o[i];
-            else
-                for (var k in o)
-                    if (o.hasOwnProperty(k))
-                        if (predicate(o[k], k))
-                            return o[k];
-    return undefined;
-}
-exports.find = find;
-function has(o, finder) { return !!find(o, finder); }
-exports.has = has;
-function partition(o, splitter) {
+function partition(o, fOrList) {
     if (o instanceof Array) {
         var selected_1 = new Array(), rejected_1 = new Array();
-        var f_1 = splitter instanceof Function ? splitter : function (_v, i) { return splitter.includes(i); };
+        var f_1 = fOrList instanceof Function ? fOrList : function (_v, i) { return fOrList.includes(i); };
         each(o, function (v, i) { return f_1(v, i) ? selected_1.push(v) : rejected_1.push(v); });
         return [selected_1, rejected_1];
     }
     else {
         var selected_2 = {}, rejected_2 = {};
-        var f_2 = splitter instanceof Function ? splitter : function (_v, k) { return splitter.includes(k); };
+        var f_2 = fOrList instanceof Function ? fOrList : function (_v, k) { return fOrList.includes(k); };
         each(o, function (v, k) { return f_2(v, k) ? selected_2[k] = v : rejected_2[k] = v; });
         return [selected_2, rejected_2];
     }
 }
 exports.partition = partition;
 // sort ---------------------------------------------------------------------------
-function sort(list, compare_fn) {
+function sort(list, compareFn) {
     list = __spreadArrays(list);
-    list.sort(compare_fn);
+    list.sort(compareFn);
     return list;
 }
 exports.sort = sort;
 function select(o, f) { return partition(o, f)[0]; }
 exports.select = select;
-function reject(o, f) { return partition(o, f)[1]; }
-exports.reject = reject;
 // uniq ---------------------------------------------------------------------------
 function uniq(list) { return list.filter(function (v, i, a) { return a.indexOf(v) === i; }); }
 exports.uniq = uniq;
@@ -553,10 +495,6 @@ function keys(o) {
     return reduce(o, [], function (list, _v, k) { list.push(k); return list; });
 }
 exports.keys = keys;
-function values(o) {
-    return reduce(o, [], function (list, v) { list.push(v); return list; });
-}
-exports.values = values;
 function map(o, f) {
     if (o instanceof Array)
         return o.map(f);
@@ -589,23 +527,12 @@ exports.shuffle = shuffle;
 var seedrandom;
 exports.seedrandom = seedrandom;
 {
-    var seedrandom_lib_1 = undefined;
+    var seedrandomLib_1 = undefined;
     exports.seedrandom = seedrandom = function (seed) {
         // Code for proper random generator is not simple, the library needed
-        if (seedrandom_lib_1 === undefined)
-            seedrandom_lib_1 = require('seedrandom');
-        return seedrandom_lib_1('' + seed);
+        if (seedrandomLib_1 === undefined)
+            seedrandomLib_1 = require('seedrandom');
+        return seedrandomLib_1('' + seed);
     };
 }
-// CustomError --------------------------------------------------------------------
-var CustomError = /** @class */ (function (_super) {
-    __extends(CustomError, _super);
-    function CustomError(message) {
-        var _this = _super.call(this, message) || this;
-        Object.setPrototypeOf(_this, CustomError.prototype);
-        return _this;
-    }
-    return CustomError;
-}(Error));
-exports.CustomError = CustomError;
-//# sourceMappingURL=base.js.map
+//# sourceMappingURL=base-cc.js.map

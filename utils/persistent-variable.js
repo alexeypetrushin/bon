@@ -36,7 +36,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var fs = require("../fs");
+var fs = require("../fs-cc");
 var PersistentVariable = /** @class */ (function () {
     function PersistentVariable(fname, defaultValue) {
         this.fname = fname;

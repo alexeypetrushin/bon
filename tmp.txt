@@ -9,3 +9,24 @@ export function stacktrace(): string[] {
     .map((line) => line.replace(/^\s*at\s+/, ''))
     .filter((line) => !skiptrace.test(line))
 }
+
+// export class CustomError {
+//   public readonly stack: string[]
+
+//   constructor(
+//     public readonly message: string
+//   ) {
+//     this.stack = stacktrace(1)
+//   }
+// }
+// const skiptrace = /^Generator\.throw \(|^Object.throw \(|^step \(|^rejected \(/
+// export function stacktrace(skip = 0): string[] {
+//   const error = new Error()
+//   const stack = (error.stack || "").split("\n")
+//   stack.shift() // Removing Error line
+//   stack.shift() // Removing the `skiptrace` line
+//   for (let i = 0; i < skip; i++) stack.shift() // Removing any extra lines if required
+//   return stack
+//     .map((line) => line.replace(/^\s*at\s+/, ''))
+//     .filter((line) => !skiptrace.test(line))
+// }

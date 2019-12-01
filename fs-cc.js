@@ -47,7 +47,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var base_1 = require("./base");
+var base_cc_1 = require("./base-cc");
 var nodefs = require("fs");
 var nodepath = require("path");
 var fsextra = require("fs-extra");
@@ -61,7 +61,7 @@ function resolve() {
     return (_a = require('path')).resolve.apply(_a, paths);
 }
 exports.resolve = resolve;
-function read_directory(path, type) {
+function readDirectory(path, type) {
     return __awaiter(this, void 0, void 0, function () {
         var list, filtered, _i, list_1, path_1;
         return __generator(this, function (_a) {
@@ -77,7 +77,7 @@ function read_directory(path, type) {
                 case 2:
                     if (!(_i < list_1.length)) return [3 /*break*/, 5];
                     path_1 = list_1[_i];
-                    return [4 /*yield*/, get_type(path_1)];
+                    return [4 /*yield*/, getType(path_1)];
                 case 3:
                     if ((_a.sent()) == type)
                         filtered.push(path_1);
@@ -90,13 +90,13 @@ function read_directory(path, type) {
         });
     });
 }
-exports.read_directory = read_directory;
-function read_file(path, options) {
+exports.readDirectory = readDirectory;
+function readFile(path, options) {
     return util_1.promisify(nodefs.readFile)(path, options);
 }
-exports.read_file = read_file;
+exports.readFile = readFile;
 // Creates parent directory automatically
-function write_file(path, data, options) {
+function writeFile(path, data, options) {
     return __awaiter(this, void 0, void 0, function () {
         var directory;
         return __generator(this, function (_a) {
@@ -106,7 +106,7 @@ function write_file(path, data, options) {
                     return [4 /*yield*/, exists(directory)];
                 case 1:
                     if (!!(_a.sent())) return [3 /*break*/, 3];
-                    return [4 /*yield*/, make_directory(directory)];
+                    return [4 /*yield*/, makeDirectory(directory)];
                 case 2:
                     _a.sent();
                     _a.label = 3;
@@ -121,37 +121,10 @@ function write_file(path, data, options) {
         });
     });
 }
-exports.write_file = write_file;
-function read_json(path) {
-    return __awaiter(this, void 0, void 0, function () {
-        var _a, _b;
-        return __generator(this, function (_c) {
-            switch (_c.label) {
-                case 0:
-                    _b = (_a = JSON).parse;
-                    return [4 /*yield*/, read_file(path, { encoding: 'utf-8' })];
-                case 1: return [2 /*return*/, _b.apply(_a, [_c.sent()])];
-            }
-        });
-    });
-}
-exports.read_json = read_json;
-function write_json(path, data) {
-    return __awaiter(this, void 0, void 0, function () {
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0: return [4 /*yield*/, write_file(path, JSON.stringify(data), { encoding: 'utf-8' })];
-                case 1:
-                    _a.sent();
-                    return [2 /*return*/];
-            }
-        });
-    });
-}
-exports.write_json = write_json;
+exports.writeFile = writeFile;
 function rename(from, to, options) {
     return __awaiter(this, void 0, void 0, function () {
-        var to_parent_directory;
+        var toParentDirectory;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0: return [4 /*yield*/, exists(to)];
@@ -159,11 +132,11 @@ function rename(from, to, options) {
                     // Checking if to file already exist
                     if ((_a.sent()) && !(options && options.overwrite))
                         throw new Error("file " + to + " already exists");
-                    to_parent_directory = nodepath.dirname(to);
-                    return [4 /*yield*/, exists(to_parent_directory)];
+                    toParentDirectory = nodepath.dirname(to);
+                    return [4 /*yield*/, exists(toParentDirectory)];
                 case 2:
                     if (!!(_a.sent())) return [3 /*break*/, 4];
-                    return [4 /*yield*/, make_directory(to_parent_directory)];
+                    return [4 /*yield*/, makeDirectory(toParentDirectory)];
                 case 3:
                     _a.sent();
                     _a.label = 4;
@@ -177,7 +150,7 @@ function rename(from, to, options) {
 }
 exports.rename = rename;
 // Creates parent directory automatically
-function make_directory(path) {
+function makeDirectory(path) {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -194,7 +167,7 @@ function make_directory(path) {
         });
     });
 }
-exports.make_directory = make_directory;
+exports.makeDirectory = makeDirectory;
 function exists(path) {
     return __awaiter(this, void 0, void 0, function () {
         var e_1;
@@ -215,7 +188,7 @@ function exists(path) {
     });
 }
 exports.exists = exists;
-function delete_file(path) {
+function deleteFile(path) {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -232,8 +205,8 @@ function delete_file(path) {
         });
     });
 }
-exports.delete_file = delete_file;
-function delete_directory(path, options) {
+exports.deleteFile = deleteFile;
+function deleteDirectory(path, options) {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -250,19 +223,19 @@ function delete_directory(path, options) {
         });
     });
 }
-exports.delete_directory = delete_directory;
-function delete_tmp_directory(path) {
+exports.deleteDirectory = deleteDirectory;
+function deleteTmpDirectory(path) {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
             // `tmp` in path required for safety so you don't accidentally delete non temp directory.
-            base_1.assert(/tmp|temp/i.test(path), "temp directory expected to have tmp or temp term in its path");
-            delete_directory(path, { recursive: true });
+            base_cc_1.assert(/tmp|temp/i.test(path), "temp directory expected to have tmp or temp term in its path");
+            deleteDirectory(path, { recursive: true });
             return [2 /*return*/];
         });
     });
 }
-exports.delete_tmp_directory = delete_tmp_directory;
-function get_type(path) {
+exports.deleteTmpDirectory = deleteTmpDirectory;
+function getType(path) {
     return __awaiter(this, void 0, void 0, function () {
         var stat;
         return __generator(this, function (_a) {
@@ -283,5 +256,5 @@ function get_type(path) {
         });
     });
 }
-exports.get_type = get_type;
-//# sourceMappingURL=fs.js.map
+exports.getType = getType;
+//# sourceMappingURL=fs-cc.js.map
