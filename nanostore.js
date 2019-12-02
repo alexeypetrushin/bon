@@ -24,7 +24,7 @@ var __assign = (this && this.__assign) || function () {
     return __assign.apply(this, arguments);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var preact_1 = require("preact");
+var breact_1 = require("./breact");
 // Store --------------------------------------------------------------------------
 var Nanostore = /** @class */ (function () {
     function Nanostore(state) {
@@ -47,47 +47,46 @@ var Nanostore = /** @class */ (function () {
     return Nanostore;
 }());
 exports.Nanostore = Nanostore;
-// buildConnect -------------------------------------------------------------------
-function buildConnect(getState, subscribe) {
-    var _getState = getState;
-    return function connect(mapStateProps, Element) {
+// build_connect ------------------------------------------------------------------
+function build_connect(get_state, subscribe) {
+    var _get_state = get_state;
+    return function connect(map_state_props, Element) {
         var ConnectedWrapper = /** @class */ (function (_super) {
             __extends(ConnectedWrapper, _super);
             function ConnectedWrapper(props) {
                 var _this = _super.call(this, props) || this;
-                _this.currentStateSize = 0;
-                _this.state = mapStateProps instanceof Function ? mapStateProps(getState()) : mapStateProps;
-                _this.currentStateSize = Object.keys(_this.state).length;
+                _this.current_state_size = 0;
+                _this.state = map_state_props instanceof Function ? map_state_props(get_state()) : map_state_props;
+                _this.current_state_size = Object.keys(_this.state).length;
                 return _this;
             }
-            ConnectedWrapper.prototype.componentDidMount = function () {
+            ConnectedWrapper.prototype.component_did_mount = function () {
                 var _this = this;
                 this.unsubscribe = subscribe(function () {
-                    var newProps = mapStateProps instanceof Function ? mapStateProps(getState()) : mapStateProps;
-                    var currentState = _this.state;
+                    var new_props = map_state_props instanceof Function ? map_state_props(get_state()) : map_state_props;
+                    var current_state = _this.state;
                     // Checking for changes
                     var changed = false, newSize = 0;
-                    for (var k in newProps) {
-                        if (newProps[k] !== currentState[k])
+                    for (var k in new_props) {
+                        if (new_props[k] !== current_state[k])
                             changed = true;
                         newSize += 1;
                     }
-                    changed = changed || (newSize != _this.currentStateSize);
-                    _this.currentStateSize = newSize;
+                    changed = changed || (newSize != _this.current_state_size);
+                    _this.current_state_size = newSize;
                     if (changed)
-                        _this.setState(newProps);
+                        _this.setState(new_props);
                 });
             };
-            ConnectedWrapper.prototype.componentWillUnmount = function () { if (this.unsubscribe)
+            ConnectedWrapper.prototype.component_will_unmount = function () { if (this.unsubscribe)
                 this.unsubscribe(); };
             ConnectedWrapper.prototype.render = function () {
-                var props = this.props;
-                return preact_1.h(Element, __assign(__assign({}, this.props), this.state));
+                return breact_1.h(Element, __assign(__assign({}, this.props), this.state));
             };
             return ConnectedWrapper;
-        }(preact_1.Component));
+        }(breact_1.Component));
         return ConnectedWrapper;
     };
 }
-exports.buildConnect = buildConnect;
+exports.build_connect = build_connect;
 //# sourceMappingURL=nanostore.js.map

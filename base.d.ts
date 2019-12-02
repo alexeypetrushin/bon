@@ -54,7 +54,9 @@ export declare function length<T>(o: Array<T> | {
 export declare function is_empty<T>(o: Array<T> | {
     [key: string]: T;
 } | String | string): boolean;
-export declare function take<T>(list: Array<T>, n: number): T[];
+declare function take<T>(s: string, n: number): string;
+declare function take<T>(list: Array<T>, n: number): Array<T>;
+export { take };
 export declare function last<T>(list: Array<T>): T;
 export declare function last<T>(list: Array<T>, n: number): T[];
 declare function each<T>(list: T[], f: (v: T, i: number) => void): void;

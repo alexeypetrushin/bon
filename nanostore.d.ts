@@ -1,4 +1,4 @@
-import { AnyComponent } from 'preact';
+import { ComponentConstructor } from './breact';
 export declare type Listener = () => void;
 export declare class Nanostore<State> {
     protected state: State;
@@ -8,4 +8,4 @@ export declare class Nanostore<State> {
     set: (state: Partial<State>) => void;
     subscribe: (listener: Listener) => () => void;
 }
-export declare function buildConnect<State>(getState: () => State, subscribe: (listener: Listener) => (() => void)): <StateProps, OwnProps>(mapStateProps: StateProps | ((state: State) => StateProps), Element: AnyComponent<StateProps & OwnProps, any>) => AnyComponent<OwnProps, {}>;
+export declare function build_connect<State>(get_state: () => State, subscribe: (listener: Listener) => (() => void)): <StateProps, OwnProps>(map_state_props: StateProps | ((state: State) => StateProps), Element: ComponentConstructor<StateProps & OwnProps, any>) => ComponentConstructor<OwnProps, {}>;

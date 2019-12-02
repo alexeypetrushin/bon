@@ -284,8 +284,8 @@ exports.inline_test(function () {
 var md5;
 exports.md5 = md5;
 try {
-    var create_hash_1 = require('crypto').create_hash;
-    exports.md5 = md5 = function (data) { return create_hash_1('md5').update(data).digest('hex'); };
+    var createHash_1 = require('crypto').createHash;
+    exports.md5 = md5 = function (data) { return createHash_1('md5').update(data).digest('hex'); };
 }
 catch (e) {
     exports.md5 = md5 = function () { throw new Error("md5 not implemented"); };
@@ -441,8 +441,9 @@ function is_empty(o) {
     return length(o) == 0;
 }
 exports.is_empty = is_empty;
-// take ---------------------------------------------------------------------------
-function take(list, n) { return list.slice(0, n); }
+function take(list, n) {
+    return list.slice(0, n);
+}
 exports.take = take;
 function last(list, n) {
     if (n === undefined) {

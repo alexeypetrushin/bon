@@ -173,8 +173,8 @@ inline_test(() => {
 // md5 ----------------------------------------------------------------------------
 let md5: (s: string) => string
 try {
-  const { create_hash } = require('crypto')
-  md5 = (data: string) => create_hash('md5').update(data).digest('hex')
+  const { createHash } = require('crypto')
+  md5 = (data: string) => createHash('md5').update(data).digest('hex')
 } catch(e) { md5 = () => { throw new Error("md5 not implemented") } }
 export { md5 }
 
@@ -371,7 +371,12 @@ export function is_empty<T>(o: Array<T> | { [key: string]: T } | String | string
 
 
 // take ---------------------------------------------------------------------------
-export function take<T>(list: Array<T>, n: number) { return list.slice(0, n) }
+function take<T>(s: string, n: number): string
+function take<T>(list: Array<T>, n: number): Array<T>
+function take<T>(list: string | Array<T>, n: number) {
+  return list.slice(0, n)
+}
+export { take }
 
 
 // last ---------------------------------------------------------------------------

@@ -1,8 +1,7 @@
 import { something } from './base'
-import { h, Component, AnyComponent } from 'preact'
+import { h, Component, ComponentConstructor } from './breact'
 
 export type Listener = () => void
-
 
 // Store --------------------------------------------------------------------------
 export class Nanostore<State> {
@@ -25,48 +24,47 @@ export class Nanostore<State> {
 }
 
 
-// buildConnect -------------------------------------------------------------------
-export function buildConnect<State>(
-  getState:  () => State,
+// build_connect ------------------------------------------------------------------
+export function build_connect<State>(
+  get_state: () => State,
   subscribe: (listener: Listener) => (() => void)
 ) {
-  const _getState = getState;
+  const _get_state = get_state;
   return function connect<StateProps, OwnProps>(
-    mapStateProps:  StateProps | ((state: State) => StateProps),
-    Element:        AnyComponent<StateProps & OwnProps, any>
-  ): AnyComponent<OwnProps, {}> {
+    map_state_props:  StateProps | ((state: State) => StateProps),
+    Element:          ComponentConstructor<StateProps & OwnProps, any>
+  ): ComponentConstructor<OwnProps, {}> {
     class ConnectedWrapper extends Component<OwnProps, StateProps> {
       private unsubscribe?: () => void
-      private currentStateSize = 0
+      private current_state_size = 0
 
       constructor(props: OwnProps) {
         super(props)
-        this.state = mapStateProps instanceof Function ? mapStateProps(getState()) : mapStateProps
-        this.currentStateSize = Object.keys(this.state).length
+        this.state = map_state_props instanceof Function ? map_state_props(get_state()) : map_state_props
+        this.current_state_size = Object.keys(this.state).length
       }
 
-      componentDidMount() {
+      component_did_mount() {
         this.unsubscribe = subscribe(() => {
-          const newProps = mapStateProps instanceof Function ? mapStateProps(getState()) : mapStateProps
-          const currentState = this.state
+          const new_props = map_state_props instanceof Function ? map_state_props(get_state()) : map_state_props
+          const current_state = this.state
 
           // Checking for changes
           let changed = false, newSize = 0
-          for (const k in newProps) {
-            if (newProps[k] !== currentState[k]) changed = true
+          for (const k in new_props) {
+            if (new_props[k] !== current_state[k]) changed = true
             newSize += 1
           }
-          changed = changed || (newSize != this.currentStateSize)
-          this.currentStateSize = newSize
+          changed = changed || (newSize != this.current_state_size)
+          this.current_state_size = newSize
 
-          if (changed) this.setState(newProps)
+          if (changed) this.setState(new_props)
         })
       }
 
-      componentWillUnmount() { if (this.unsubscribe) this.unsubscribe() }
+      component_will_unmount() { if (this.unsubscribe) this.unsubscribe() }
 
       render() {
-        const props = this.props
         return h(Element, { ...this.props, ...this.state })
       }
     }
