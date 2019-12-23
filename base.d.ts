@@ -36,12 +36,9 @@ declare let md5: (s: string) => string;
 export { md5 };
 export declare const debug_enabled: boolean;
 export declare type LogLevel = 'debug' | 'info' | 'warn' | 'error';
-export interface Log {
-    (message: string, short?: something, detailed?: something): void;
-    (level: LogLevel, message: string, short?: something, detailed?: something): void;
-}
 export declare function get_formatted_time(time: number, withSeconds?: boolean): string;
-export declare let inspect: (o: something) => void;
+export declare let inspect: (o: something) => string;
+declare function log(message: string, short?: something, detailed?: something): string;
 declare function log(level: LogLevel, message: string, short?: something, detailed?: something): string;
 export { log };
 export declare function timer(): () => number;
@@ -141,8 +138,13 @@ declare function map<M extends {}, K extends keyof M, R>(map: M, f: (v: M[K], k:
 export { map };
 export declare function round(v: number, digits?: number): number;
 export declare function shuffle<T>(list: T[], seed?: number | string): T[];
+export declare function debounce<F extends ((...args: something[]) => void)>(fn: F, timeout: number): F;
 declare let seedrandom: (seed: number | string) => (() => number);
 export { seedrandom };
 export declare class CustomError extends Error {
     constructor(message: string);
 }
+export declare class NeverError extends Error {
+    constructor(message: never);
+}
+export declare function ensure_error(error: something, default_message?: string): Error;

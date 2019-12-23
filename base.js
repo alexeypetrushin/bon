@@ -70,8 +70,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // Global variables for browser and node ------------------------------------------
 var uniglobal;
 exports.uniglobal = uniglobal;
+var has_windows = false;
 try {
     exports.uniglobal = uniglobal = window;
+    has_windows = true;
 }
 catch (e) {
     exports.uniglobal = uniglobal = global;
@@ -137,7 +139,8 @@ exports.inline_test.run = function () { return __awaiter(void 0, void 0, void 0,
         }
     });
 }); };
-var run_inline_tests = (uniglobal.process && uniglobal.process.env && uniglobal.process.env.inline_test) == 'true';
+var run_inline_tests = (uniglobal.process && uniglobal.process.env &&
+    uniglobal.process.env.inline_test) == 'true';
 if (run_inline_tests)
     uniglobal.setTimeout(exports.inline_test.run, 0);
 function http_call(url, body, options) {
@@ -292,6 +295,10 @@ catch (e) {
 }
 // log ----------------------------------------------------------------------------
 exports.debug_enabled = (uniglobal.process && uniglobal.process.env && uniglobal.process.env.debug) == 'true';
+// export interface Log {
+//   (message: string, short?: something, detailed?: something): void
+//   (level: LogLevel, message: string, short?: something, detailed?: something): void
+// }
 function pad0(v) { return v.toString().length < 2 ? '0' + v : v; }
 function get_formatted_time(time, withSeconds) {
     if (withSeconds === void 0) { withSeconds = true; }
@@ -301,18 +308,19 @@ function get_formatted_time(time, withSeconds) {
         + (pad0(date.getHours()) + ":" + pad0(date.getMinutes()) + (withSeconds ? ':' + pad0(date.getSeconds()) : ''));
 }
 exports.get_formatted_time = get_formatted_time;
-function pad(v, n) { return v.substring(0, n).padEnd(n); }
 try {
     var util_1 = require('util');
     exports.inspect = function (o) { return util_1.inspect(o, { depth: null, breakLength: Infinity }).replace(/^'|'$/g, ''); };
 }
 catch (e) {
-    exports.inspect = function (o) { return o; };
+    exports.inspect = function (o) { return JSON.stringify(o); };
 }
 var level_replacements = { debug: 'debug', info: '     ', warn: 'warn ', error: 'error' };
-function error_to_data(error) {
-    return { message: error.message, stack: exports.clean_stack(error.stack || '') };
-}
+var log_format = has_windows ? (function (o) { return o; }) : function (o) {
+    if (o === null || o === undefined || typeof o == 'string' || typeof o == 'number')
+        return o;
+    return stable_json_stringify(o);
+};
 function log() {
     var args = [];
     for (var _i = 0; _i < arguments.length; _i++) {
@@ -322,43 +330,38 @@ function log() {
     if (level == 'debug' && !exports.debug_enabled)
         return '';
     var message = args[0], short = args[1], detailed = args[2];
-    // user = user || ''
+    return exports.environment == 'development' ?
+        log_in_development(level, message, short, detailed) :
+        log_not_in_development(level, message, short, detailed);
+}
+exports.log = log;
+function log_in_development(level, message, short, detailed) {
     var buff = [level_replacements[level]];
-    // buff.push(pad(user, 8))
-    if (exports.environment != 'development')
-        buff.push(get_formatted_time(Date.now()));
     buff.push(message);
-    // Handling errors
-    var error = null;
-    if (short instanceof Error) {
-        error = short;
-        if (exports.environment != 'development')
-            buff.push(exports.inspect(error_to_data(error)));
+    var error = undefined;
+    if (short !== null && short !== undefined) {
+        if (short instanceof Error)
+            error = short;
+        else
+            buff.push(log_format(short));
     }
-    else if (short !== null && short !== undefined)
-        buff.push(exports.inspect(short));
-    if (detailed instanceof Error) {
-        error = detailed;
-        if (exports.environment != 'development')
-            buff.push(exports.inspect(error_to_data(error)));
+    if (detailed !== null && detailed !== undefined) {
+        if (detailed instanceof Error)
+            error = detailed;
+        else
+            buff.push(log_format(detailed));
     }
-    else if (detailed !== null && detailed !== undefined && exports.environment != 'development')
-        buff.push(exports.inspect(detailed));
-    buff = buff.map(function (v) { return deep_map(v, map_to_json_if_defined); });
-    // Adding full username in production
-    // if (environment != 'development') buff.push(user)
+    // buff = buff.map((v: something) => deep_map(v, map_to_json_if_defined))
     // Generating id
     var id = '';
     if (level != 'info') {
-        id = md5(stable_json_stringify(args)).substr(0, 6);
+        id = md5(stable_json_stringify(arguments)).substr(0, 6);
         buff.push(id);
     }
-    // Printing
-    ;
-    uniglobal.console[level].apply(uniglobal.console, buff);
-    // Printing error in development
-    if (exports.environment == 'development' && error) {
-        var clean_error = new Error(error.message);
+    console[level].apply(console, buff);
+    // Printing error separately in development
+    if (error) {
+        var clean_error = ensure_error(error);
         clean_error.stack = exports.clean_stack(error.stack || '');
         console.log('');
         console.error(clean_error);
@@ -366,7 +369,24 @@ function log() {
     }
     return id;
 }
-exports.log = log;
+function log_not_in_development(level, message, short, detailed) {
+    var buff = [level_replacements[level]];
+    buff.push(get_formatted_time(Date.now()));
+    buff.push(message);
+    if (short !== null && short !== undefined)
+        buff.push(log_format(short));
+    if (detailed !== null && detailed !== undefined)
+        buff.push(log_format(detailed));
+    // Generating id
+    var id = '';
+    if (level != 'info') {
+        id = md5(stable_json_stringify(arguments)).substr(0, 6);
+        buff.push(id);
+    }
+    // Printing
+    console[level].apply(console, buff);
+    return id;
+}
 // export function logWithUser(
 //   level: LogLevel, user: string, message: string, short?: something, detailed?: something
 // ): string { return log(level, `${pad(user, 8)} ${message}`, short, detailed) }
@@ -586,6 +606,20 @@ function shuffle(list, seed) {
     return list;
 }
 exports.shuffle = shuffle;
+// debounce -----------------------------------------------------------------------
+function debounce(fn, timeout) {
+    var timer = undefined;
+    return (function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
+        if (timer)
+            clearTimeout(timer);
+        timer = setTimeout(function () { return fn.apply(void 0, args); }, timeout);
+    });
+}
+exports.debounce = debounce;
 // seedrandom ---------------------------------------------------------------------
 var seedrandom;
 exports.seedrandom = seedrandom;
@@ -609,4 +643,27 @@ var CustomError = /** @class */ (function (_super) {
     return CustomError;
 }(Error));
 exports.CustomError = CustomError;
+// NeverError ---------------------------------------------------------------------
+var NeverError = /** @class */ (function (_super) {
+    __extends(NeverError, _super);
+    function NeverError(message) {
+        return _super.call(this, "NeverError: " + message) || this;
+    }
+    return NeverError;
+}(Error));
+exports.NeverError = NeverError;
+// ensure_error -------------------------------------------------------------------
+function ensure_error(error, default_message) {
+    if (default_message === void 0) { default_message = "Unknown error"; }
+    if (error && (typeof error == 'object') && (error instanceof Error)) {
+        if (!error.message)
+            error.message = default_message;
+        return error;
+    }
+    else {
+        return new Error('' + (error || default_message));
+    }
+    // return '' + ((error && (typeof error == 'object') && error.message) || default_message)
+}
+exports.ensure_error = ensure_error;
 //# sourceMappingURL=base.js.map

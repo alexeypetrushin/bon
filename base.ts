@@ -7,7 +7,11 @@ declare const window: something
 declare const global: something
 declare const require: something
 declare const process: something
-try { uniglobal = window } catch(e) { uniglobal = global }
+let has_windows = false
+try {
+  uniglobal = window
+  has_windows = true
+} catch(e) { uniglobal = global }
 export { uniglobal }
 
 // Useful constants ---------------------------------------------------------------
@@ -54,7 +58,8 @@ inline_test.run = async () => {
   }
 }
 
-const run_inline_tests = (uniglobal.process && uniglobal.process.env && uniglobal.process.env.inline_test) == 'true'
+const run_inline_tests = (uniglobal.process && uniglobal.process.env &&
+  uniglobal.process.env.inline_test) == 'true'
 if (run_inline_tests) uniglobal.setTimeout(inline_test.run, 0)
 
 // http_call ----------------------------------------------------------------------
@@ -181,10 +186,10 @@ export { md5 }
 // log ----------------------------------------------------------------------------
 export const debug_enabled = (uniglobal.process && uniglobal.process.env && uniglobal.process.env.debug) == 'true'
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error'
-export interface Log {
-  (message: string, short?: something, detailed?: something): void
-  (level: LogLevel, message: string, short?: something, detailed?: something): void
-}
+// export interface Log {
+//   (message: string, short?: something, detailed?: something): void
+//   (level: LogLevel, message: string, short?: something, detailed?: something): void
+// }
 
 function pad0(v: string | number) { return v.toString().length < 2 ? '0' + v : v }
 export function get_formatted_time(time: number, withSeconds = true) {
@@ -194,68 +199,68 @@ export function get_formatted_time(time: number, withSeconds = true) {
   + `${pad0(date.getHours())}:${pad0(date.getMinutes())}${withSeconds ? ':' + pad0(date.getSeconds()) : ''}`
 }
 
-function pad(v: string, n: number) { return v.substring(0, n).padEnd(n) }
+// function pad(v: string, n: number) { return v.substring(0, n).padEnd(n) }
 
-export let inspect: (o: something) => void
+export let inspect: (o: something) => string
 try {
   const util = require('util')
   inspect = (o) => util.inspect(o, { depth: null, breakLength: Infinity }).replace(/^'|'$/g, '')
-} catch(e) { inspect = (o) => o }
+} catch(e) { inspect = (o) => JSON.stringify(o) }
 
 const level_replacements: { [key: string]: string } =
   { debug: 'debug', info: '     ', warn: 'warn ', error: 'error' }
-function error_to_data(error: something) {
-  return { message: error.message, stack: clean_stack(error.stack || '') }
+
+const log_format = has_windows ? ((o: something) => o) : (o: something) => {
+  if (o === null || o === undefined || typeof o == 'string' || typeof o == 'number') return o
+  return stable_json_stringify(o)
 }
 
-// function log(user: string, message: string, short?: something, detailed?: something): string
+function log(message: string, short?: something, detailed?: something): string
 function log(
   level: LogLevel, message: string, short?: something, detailed?: something
 ): string
 function log(...args: something[]): string {
   const level = ['info', 'warn', 'error', 'debug'].includes(args[0]) ? args.shift() : 'info'
   if (level == 'debug' && !debug_enabled) return ''
+  const [message, short, detailed] = args
 
-  let [message, short, detailed] = args
-  // user = user || ''
+  return environment == 'development' ?
+    log_in_development(level, message, short, detailed) :
+    log_not_in_development(level, message, short, detailed)
+}
+export { log }
+
+function log_in_development(
+  level: LogLevel, message: string, short?: something, detailed?: something
+): string {
   let buff: something[] = [level_replacements[level]]
-
-  // buff.push(pad(user, 8))
-
-  if (environment != 'development') buff.push(get_formatted_time(Date.now()))
   buff.push(message)
 
-  // Handling errors
-  let error: something = null
-  if (short instanceof Error) {
-    error = short
-    if (environment != 'development') buff.push(inspect(error_to_data(error)))
-  } else if (short !== null && short !== undefined) buff.push(inspect(short))
+  let error: Error | undefined = undefined
+  if (short !== null && short !== undefined) {
+    if (short instanceof Error) error = short
+    else                        buff.push(log_format(short))
+  }
 
-  if (detailed instanceof Error) {
-    error = detailed
-    if (environment != 'development') buff.push(inspect(error_to_data(error)))
-  } else
-    if (detailed !== null && detailed !== undefined && environment != 'development') buff.push(inspect(detailed))
+  if (detailed !== null && detailed !== undefined) {
+    if (detailed instanceof Error) error = detailed
+    else                           buff.push(log_format(detailed))
+  }
 
-  buff = buff.map((v: something) => deep_map(v, map_to_json_if_defined))
-
-  // Adding full username in production
-  // if (environment != 'development') buff.push(user)
+  // buff = buff.map((v: something) => deep_map(v, map_to_json_if_defined))
 
   // Generating id
   let id = ''
   if (level != 'info') {
-    id = md5(stable_json_stringify(args)).substr(0, 6)
+    id = md5(stable_json_stringify(arguments)).substr(0, 6)
     buff.push(id)
   }
 
-  // Printing
-  ;(uniglobal.console as something)[level].apply(uniglobal.console, buff)
+  console[level](...buff)
 
-  // Printing error in development
-  if (environment == 'development' && error) {
-    const clean_error = new Error(error.message)
+  // Printing error separately in development
+  if (error) {
+    const clean_error = ensure_error(error)
     clean_error.stack = clean_stack(error.stack || '')
     console.log('')
     console.error(clean_error)
@@ -263,7 +268,30 @@ function log(...args: something[]): string {
   }
   return id
 }
-export { log }
+
+function log_not_in_development(
+  level: LogLevel, message: string, short?: something, detailed?: something
+): string {
+  let buff: something[] = [level_replacements[level]]
+
+  buff.push(get_formatted_time(Date.now()))
+  buff.push(message)
+
+  if (short !== null && short !== undefined)       buff.push(log_format(short))
+  if (detailed !== null && detailed !== undefined) buff.push(log_format(detailed))
+
+  // Generating id
+  let id = ''
+  if (level != 'info') {
+    id = md5(stable_json_stringify(arguments)).substr(0, 6)
+    buff.push(id)
+  }
+
+  // Printing
+  console[level](...buff)
+  return id
+}
+
 
 // export function logWithUser(
 //   level: LogLevel, user: string, message: string, short?: something, detailed?: something
@@ -578,6 +606,15 @@ export function shuffle<T>(list: T[], seed?: number | string): T[] {
 }
 
 
+// debounce -----------------------------------------------------------------------
+export function debounce<F extends ((...args: something[]) => void)>(fn: F, timeout: number): F {
+  let timer: something = undefined
+  return ((...args: something[]) => {
+    if (timer) clearTimeout(timer)
+    timer = setTimeout(() => fn(...args), timeout)
+  }) as F
+}
+
 // seedrandom ---------------------------------------------------------------------
 let seedrandom: (seed: number | string) => (() => number)
 {
@@ -591,11 +628,28 @@ let seedrandom: (seed: number | string) => (() => number)
 export { seedrandom }
 
 
-
 // CustomError --------------------------------------------------------------------
 export class CustomError extends Error {
   constructor(message: string) {
     super(message)
     Object.setPrototypeOf(this, CustomError.prototype)
   }
+}
+
+
+// NeverError ---------------------------------------------------------------------
+export class NeverError extends Error {
+  constructor(message: never) { super(`NeverError: ${message}`) }
+}
+
+
+// ensure_error -------------------------------------------------------------------
+export function ensure_error(error: something, default_message = "Unknown error"): Error {
+  if (error && (typeof error == 'object') && (error instanceof Error)) {
+    if (!error.message) error.message = default_message
+    return error
+  } else {
+    return new Error('' + (error || default_message))
+  }
+  // return '' + ((error && (typeof error == 'object') && error.message) || default_message)
 }
