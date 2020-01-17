@@ -129,7 +129,7 @@ function read_json(path) {
             switch (_c.label) {
                 case 0:
                     _b = (_a = JSON).parse;
-                    return [4 /*yield*/, read_file(path, { encoding: 'utf-8' })];
+                    return [4 /*yield*/, read_file(path, { encoding: 'utf8' })];
                 case 1: return [2 /*return*/, _b.apply(_a, [_c.sent()])];
             }
         });
@@ -140,7 +140,7 @@ function write_json(path, data) {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, write_file(path, JSON.stringify(data), { encoding: 'utf-8' })];
+                case 0: return [4 /*yield*/, write_file(path, JSON.stringify(data), { encoding: 'utf8' })];
                 case 1:
                     _a.sent();
                     return [2 /*return*/];

@@ -78,6 +78,7 @@ try {
 catch (e) {
     exports.uniglobal = uniglobal = global;
 }
+var console = uniglobal.console;
 // Useful constants ---------------------------------------------------------------
 exports.kb = 1024, exports.mb = 1024 * exports.kb;
 exports.sec = 1000, exports.min = 60 * exports.sec, exports.hour = 60 * exports.min, exports.day = 24 * exports.hour;
@@ -89,21 +90,27 @@ if (!['development', 'production', 'test'].includes(exports.environment))
     throw new Error('invalid environment!');
 // p ------------------------------------------------------------------------------
 function map_to_json_if_defined(v) { return v && v.toJSON ? v.toJSON() : v; }
-var util_inspect = function (v, options) { return v; };
-try {
-    util_inspect = require('util').inspect;
-}
-catch (_e) { }
+var util_inspect = function (v, options) {
+    try {
+        util_inspect = require('util').inspect;
+    }
+    catch (_e) { }
+    return util_inspect(v, options);
+};
 function p() {
     var args = [];
     for (var _i = 0; _i < arguments.length; _i++) {
         args[_i] = arguments[_i];
     }
-    var formatted = args.map(function (v) {
-        v = deep_map(v, map_to_json_if_defined);
-        return typeof v == 'object' ? util_inspect(v, { breakLength: 80, colors: true }) : v;
-    });
-    console.log.apply(console, formatted);
+    if (has_windows)
+        console.log.apply(console, args);
+    else {
+        var formatted = args.map(function (v) {
+            v = deep_map(v, map_to_json_if_defined);
+            return typeof v == 'object' ? util_inspect(v, { breakLength: 80, colors: true }) : v;
+        });
+        console.log.apply(console, formatted);
+    }
 }
 exports.p = p;
 var fetch = uniglobal.fetch || require('node-fetch');
@@ -218,7 +225,7 @@ exports.assert.warn = function (condition, message) { if (!condition)
 exports.assert.equal = function (a, b, message) {
     if (!is_equal(a, b)) {
         var message_string = message ? (message instanceof Function ? message() : message) :
-            "Assertion error: " + stable_json_stringify(a) + " != " + stable_json_stringify(b);
+            "Assertion error: " + stable_json_stringify(a, true) + " != " + stable_json_stringify(b, true);
         throw new Error(message_string);
     }
 };
@@ -247,7 +254,10 @@ function deep_clone_and_sort(obj) {
 exports.deep_clone_and_sort = deep_clone_and_sort;
 // stable_json_stringify ----------------------------------------------------------
 // https://stackoverflow.com/questions/42491226/is-json-stringify-deterministic-in-v8
-function stable_json_stringify(obj) { return JSON.stringify(deep_clone_and_sort(obj)); }
+function stable_json_stringify(obj, pretty) {
+    if (pretty === void 0) { pretty = false; }
+    return pretty ? JSON.stringify(deep_clone_and_sort(obj), null, 2) : JSON.stringify(deep_clone_and_sort(obj));
+}
 exports.stable_json_stringify = stable_json_stringify;
 // is_equal -----------------------------------------------------------------------
 function is_equal(a, b) {
@@ -321,6 +331,12 @@ var log_format = has_windows ? (function (o) { return o; }) : function (o) {
         return o;
     return stable_json_stringify(o);
 };
+// Some errors may contain additional properties with huge data, stripping it
+var log_clean_error = function (error) {
+    var clean = new Error(error.message);
+    clean.stack = error.stack;
+    return clean;
+};
 function log() {
     var args = [];
     for (var _i = 0; _i < arguments.length; _i++) {
@@ -341,13 +357,13 @@ function log_in_development(level, message, short, detailed) {
     var error = undefined;
     if (short !== null && short !== undefined) {
         if (short instanceof Error)
-            error = short;
+            error = log_clean_error(short);
         else
             buff.push(log_format(short));
     }
     if (detailed !== null && detailed !== undefined) {
         if (detailed instanceof Error)
-            error = detailed;
+            error = log_clean_error(detailed);
         else
             buff.push(log_format(detailed));
     }
@@ -374,9 +390,9 @@ function log_not_in_development(level, message, short, detailed) {
     buff.push(get_formatted_time(Date.now()));
     buff.push(message);
     if (short !== null && short !== undefined)
-        buff.push(log_format(short));
+        buff.push(log_format(short instanceof Error ? log_clean_error(short) : short));
     if (detailed !== null && detailed !== undefined)
-        buff.push(log_format(detailed));
+        buff.push(log_format(short instanceof Error ? log_clean_error(detailed) : detailed));
     // Generating id
     var id = '';
     if (level != 'info') {
@@ -666,4 +682,9 @@ function ensure_error(error, default_message) {
     // return '' + ((error && (typeof error == 'object') && error.message) || default_message)
 }
 exports.ensure_error = ensure_error;
+// Error.toJSON -------------------------------------------------------------------
+// Otherwise JSON will be empty `{}`
+Error.prototype.toJSON = function () {
+    return { message: this.message, stack: this.stack };
+};
 //# sourceMappingURL=base.js.map

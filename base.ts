@@ -14,6 +14,8 @@ try {
 } catch(e) { uniglobal = global }
 export { uniglobal }
 
+const console = uniglobal.console
+
 // Useful constants ---------------------------------------------------------------
 export const kb = 1024, mb = 1024 * kb
 export const sec = 1000, min = 60 * sec, hour = 60 * min, day = 24 * hour
@@ -27,14 +29,20 @@ if (!['development', 'production', 'test'].includes(environment)) throw new Erro
 
 // p ------------------------------------------------------------------------------
 function map_to_json_if_defined(v: something) { return v && v.toJSON ? v.toJSON() : v }
-let util_inspect = (v: something, options: something) => v
-try { util_inspect = require('util').inspect } catch(_e) {}
+let util_inspect = (v: something, options: something): string => {
+  try { util_inspect = require('util').inspect } catch(_e) {}
+
+  return util_inspect(v, options)
+}
 export function p(...args: something): void {
-  const formatted = args.map((v: something) => {
-    v = deep_map(v, map_to_json_if_defined)
-    return typeof v == 'object' ? util_inspect(v, { breakLength: 80, colors: true }) : v
-  })
-  console.log(...formatted)
+  if (has_windows) console.log(...args)
+  else {
+    const formatted = args.map((v: something) => {
+      v = deep_map(v, map_to_json_if_defined)
+      return typeof v == 'object' ? util_inspect(v, { breakLength: 80, colors: true }) : v
+    })
+    console.log(...formatted)
+  }
 }
 
 const fetch = uniglobal.fetch || require('node-fetch')
@@ -126,7 +134,7 @@ assert.warn = (condition, message) => { if (!condition) console.warn(message || 
 assert.equal = (a, b, message) => {
   if (!is_equal(a, b)) {
     const message_string = message ? (message instanceof Function ? message() : message) :
-      `Assertion error: ${stable_json_stringify(a)} != ${stable_json_stringify(b)}`
+      `Assertion error: ${stable_json_stringify(a, true)} != ${stable_json_stringify(b, true)}`
     throw new Error(message_string)
   }
 }
@@ -146,7 +154,9 @@ export function deep_clone_and_sort(obj: something): something {
 
 // stable_json_stringify ----------------------------------------------------------
 // https://stackoverflow.com/questions/42491226/is-json-stringify-deterministic-in-v8
-export function stable_json_stringify(obj: unknown): string { return JSON.stringify(deep_clone_and_sort(obj)) }
+export function stable_json_stringify(obj: unknown, pretty = false): string {
+  return pretty ? JSON.stringify(deep_clone_and_sort(obj), null, 2) : JSON.stringify(deep_clone_and_sort(obj))
+}
 
 // is_equal -----------------------------------------------------------------------
 export function is_equal(a: unknown, b: unknown): boolean {
@@ -215,6 +225,14 @@ const log_format = has_windows ? ((o: something) => o) : (o: something) => {
   return stable_json_stringify(o)
 }
 
+// Some errors may contain additional properties with huge data, stripping it
+const log_clean_error = (error: Error) => {
+  const clean = new Error(error.message)
+  clean.stack = error.stack
+  return clean
+}
+
+
 function log(message: string, short?: something, detailed?: something): string
 function log(
   level: LogLevel, message: string, short?: something, detailed?: something
@@ -238,12 +256,12 @@ function log_in_development(
 
   let error: Error | undefined = undefined
   if (short !== null && short !== undefined) {
-    if (short instanceof Error) error = short
+    if (short instanceof Error) error = log_clean_error(short)
     else                        buff.push(log_format(short))
   }
 
   if (detailed !== null && detailed !== undefined) {
-    if (detailed instanceof Error) error = detailed
+    if (detailed instanceof Error) error = log_clean_error(detailed)
     else                           buff.push(log_format(detailed))
   }
 
@@ -277,8 +295,11 @@ function log_not_in_development(
   buff.push(get_formatted_time(Date.now()))
   buff.push(message)
 
-  if (short !== null && short !== undefined)       buff.push(log_format(short))
-  if (detailed !== null && detailed !== undefined) buff.push(log_format(detailed))
+  if (short !== null && short !== undefined)
+    buff.push(log_format(short instanceof Error ? log_clean_error(short) : short))
+
+  if (detailed !== null && detailed !== undefined)
+    buff.push(log_format(short instanceof Error ? log_clean_error(detailed) : detailed))
 
   // Generating id
   let id = ''
@@ -652,4 +673,11 @@ export function ensure_error(error: something, default_message = "Unknown error"
     return new Error('' + (error || default_message))
   }
   // return '' + ((error && (typeof error == 'object') && error.message) || default_message)
+}
+
+
+// Error.toJSON -------------------------------------------------------------------
+// Otherwise JSON will be empty `{}`
+(Error.prototype as something).toJSON = function(this: something) {
+  return { message: this.message, stack: this.stack }
 }

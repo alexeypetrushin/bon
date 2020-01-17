@@ -41,11 +41,11 @@ export async function write_file(
 }
 
 export async function read_json<T = something>(path: string): Promise<T> {
-  return JSON.parse(await read_file(path, { encoding: 'utf-8' }))
+  return JSON.parse(await read_file(path, { encoding: 'utf8' }))
 }
 
 export async function write_json<T>(path: string, data: T): Promise<void> {
-  await write_file(path, JSON.stringify(data), { encoding: 'utf-8' })
+  await write_file(path, JSON.stringify(data), { encoding: 'utf8' })
 }
 
 export async function rename(from: string, to: string, options?: { overwrite: boolean }): Promise<void> {

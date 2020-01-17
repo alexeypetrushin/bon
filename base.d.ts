@@ -29,7 +29,7 @@ export interface Assert {
 }
 export declare const assert: Assert;
 export declare function deep_clone_and_sort(obj: something): something;
-export declare function stable_json_stringify(obj: unknown): string;
+export declare function stable_json_stringify(obj: unknown, pretty?: boolean): string;
 export declare function is_equal(a: unknown, b: unknown): boolean;
 export declare function deep_map(obj: something, map: (o: something) => something): something;
 declare let md5: (s: string) => string;
