@@ -61,7 +61,7 @@ inline_test.run = async () => {
     for(const test of inline_tests) await test()
     log('info', 'inline tests passed')
   } catch(e) {
-    console.error(e)
+    log('error', e)
     uniglobal.process && uniglobal.process.exit()
   }
 }
@@ -120,6 +120,7 @@ export async function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => uniglobal.setTimeout(resolve, ms))
 }
 
+
 // assert -------------------------------------------------------------------------
 export interface Assert {
   (condition: boolean, message?: string | (() => string)): void
@@ -130,7 +131,7 @@ export const assert = <Assert>function(condition, message): void {
   const message_string = message ? (message instanceof Function ? message() : message) : 'Assertion error!'
   if (!condition) throw new Error(message_string)
 }
-assert.warn = (condition, message) => { if (!condition) console.warn(message || 'Assertion error!') }
+assert.warn = (condition, message) => { if (!condition) log('warn', message || 'Assertion error!') }
 assert.equal = (a, b, message) => {
   if (!is_equal(a, b)) {
     const message_string = message ? (message instanceof Function ? message() : message) :
@@ -231,7 +232,6 @@ const log_clean_error = (error: Error) => {
   clean.stack = error.stack
   return clean
 }
-
 
 function log(message: string, short?: something, detailed?: something): string
 function log(
@@ -680,4 +680,14 @@ export function ensure_error(error: something, default_message = "Unknown error"
 // Otherwise JSON will be empty `{}`
 (Error.prototype as something).toJSON = function(this: something) {
   return { message: this.message, stack: this.stack }
+}
+
+
+// Test ---------------------------------------------------------------------------
+export async function test(title: string, fn: () => Promise<void> | void): Promise<void> {
+  try       { await fn() }
+  catch (e) {
+    log('error', title)
+    throw e
+  }
 }

@@ -148,3 +148,4 @@ export declare class NeverError extends Error {
     constructor(message: never);
 }
 export declare function ensure_error(error: something, default_message?: string): Error;
+export declare function test(title: string, fn: () => Promise<void> | void): Promise<void>;
