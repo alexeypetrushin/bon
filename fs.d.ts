@@ -24,4 +24,5 @@ export declare function delete_directory(path: string, options?: {
     recursive?: boolean;
 }): Promise<void>;
 export declare function delete_tmp_directory(path: string): Promise<void>;
+export declare function create_tmp_directory(prefix: string): string;
 export declare function get_type(path: string): Promise<EntryType>;

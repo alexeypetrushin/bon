@@ -3,6 +3,7 @@ import * as nodefs from 'fs'
 import * as nodepath from 'path'
 import * as fsextra from 'fs-extra'
 import { promisify } from 'util'
+import * as os from 'os'
 
 export type EntryType = 'directory' | 'file' | 'link'
 
@@ -88,10 +89,16 @@ export async function delete_directory(path: string, options?: { recursive?: boo
 }
 
 export async function delete_tmp_directory(path: string): Promise<void> {
-  // `tmp` in path required for safety so you don't accidentally delete non temp directory.
+  // `t` in path required for safety so you don't accidentally delete non temp directory.
   assert(/tmp|temp/i.test(path), `temp directory expected to have tmp or temp term in its path`)
   delete_directory(path, { recursive: true })
 }
+
+export function create_tmp_directory(prefix: string): string {
+  // return promisify(nodefs.mkdtemp)(nodepath.join(os.tmpdir(), prefix))
+  return nodepath.join(os.tmpdir(), prefix)
+}
+
 
 export async function get_type(path: string): Promise<EntryType> {
   const stat = await promisify(nodefs.lstat)(path)
