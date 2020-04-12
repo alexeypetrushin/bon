@@ -1,4 +1,4 @@
-import { something, assert } from './base'
+import { something, assert, p, ensure_error } from './base'
 import * as nodefs from 'fs'
 import * as nodepath from 'path'
 import * as fsextra from 'fs-extra'
@@ -85,12 +85,23 @@ export async function delete_file(path: string): Promise<void> {
 export async function delete_directory(path: string, options?: { recursive?: boolean }): Promise<void> {
   // Reqursive flag requiret for safety.
   if (!(await exists(path))) return
-  await promisify(options && options.recursive ? fsextra.remove : nodefs.rmdir)(path)
+  try {
+    await promisify(options && options.recursive ? fsextra.remove : nodefs.rmdir)(path)
+  } catch (e) {
+    // Because node fs errors doesn't have stack trace information
+    // https://stackoverflow.com/questions/61155350/why-theres-no-stack-trace-in-node-fs-rmdir-error
+    throw new Error(`can't delete directory '${path}' because of '${ensure_error(e).message}'`)
+  }
 }
+
+export function is_tmp_directory(path: string): boolean {
+  return /tmp|temp/i.test(path.toLowerCase())
+}
+export const not_tmp_directory_message = `temp directory expected to have 'tmp' or 'temp' term in its path`
 
 export async function delete_tmp_directory(path: string): Promise<void> {
   // `t` in path required for safety so you don't accidentally delete non temp directory.
-  assert(/tmp|temp/i.test(path), `temp directory expected to have tmp or temp term in its path`)
+  assert(is_tmp_directory(path), not_tmp_directory_message)
   delete_directory(path, { recursive: true })
 }
 

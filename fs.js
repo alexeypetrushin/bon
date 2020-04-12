@@ -236,6 +236,7 @@ function delete_file(path) {
 exports.delete_file = delete_file;
 function delete_directory(path, options) {
     return __awaiter(this, void 0, void 0, function () {
+        var e_2;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0: return [4 /*yield*/, exists(path)];
@@ -243,20 +244,34 @@ function delete_directory(path, options) {
                     // Reqursive flag requiret for safety.
                     if (!(_a.sent()))
                         return [2 /*return*/];
-                    return [4 /*yield*/, util_1.promisify(options && options.recursive ? fsextra.remove : nodefs.rmdir)(path)];
+                    _a.label = 2;
                 case 2:
+                    _a.trys.push([2, 4, , 5]);
+                    return [4 /*yield*/, util_1.promisify(options && options.recursive ? fsextra.remove : nodefs.rmdir)(path)];
+                case 3:
                     _a.sent();
-                    return [2 /*return*/];
+                    return [3 /*break*/, 5];
+                case 4:
+                    e_2 = _a.sent();
+                    // Because node fs errors doesn't have stack trace information
+                    // https://stackoverflow.com/questions/61155350/why-theres-no-stack-trace-in-node-fs-rmdir-error
+                    throw new Error("can't delete directory '" + path + "' because of '" + base_1.ensure_error(e_2).message + "'");
+                case 5: return [2 /*return*/];
             }
         });
     });
 }
 exports.delete_directory = delete_directory;
+function is_tmp_directory(path) {
+    return /tmp|temp/i.test(path.toLowerCase());
+}
+exports.is_tmp_directory = is_tmp_directory;
+exports.not_tmp_directory_message = "temp directory expected to have 'tmp' or 'temp' term in its path";
 function delete_tmp_directory(path) {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
             // `t` in path required for safety so you don't accidentally delete non temp directory.
-            base_1.assert(/tmp|temp/i.test(path), "temp directory expected to have tmp or temp term in its path");
+            base_1.assert(is_tmp_directory(path), exports.not_tmp_directory_message);
             delete_directory(path, { recursive: true });
             return [2 /*return*/];
         });
