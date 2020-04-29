@@ -37,6 +37,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var fs = require("../fs");
+var base_1 = require("../base");
 var PersistentVariable = /** @class */ (function () {
     function PersistentVariable(fname, default_value) {
         this.fname = fname;
@@ -55,7 +56,9 @@ var PersistentVariable = /** @class */ (function () {
                         return [2 /*return*/, JSON.parse(json)];
                     case 2:
                         e_1 = _a.sent();
-                        return [2 /*return*/, this.default_value];
+                        // A new default value should be created every time, because
+                        // otherwise equality would fail `changed_value == await variable.read()`
+                        return [2 /*return*/, this.default_value()];
                     case 3: return [2 /*return*/];
                 }
             });
@@ -74,7 +77,7 @@ var PersistentVariable = /** @class */ (function () {
     PersistentVariable.prototype.write = function (value) {
         return __awaiter(this, void 0, void 0, function () { return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, fs.write_file(this.fname, JSON.stringify(value, null, 2))];
+                case 0: return [4 /*yield*/, fs.write_file(this.fname, base_1.stable_json_stringify(value, true))];
                 case 1:
                     _a.sent();
                     return [2 /*return*/];

@@ -41,7 +41,8 @@ export function p(...args: something): void {
       v = deep_map(v, map_to_json_if_defined)
       return typeof v == 'object' ? util_inspect(v, { breakLength: 80, colors: true }) : v
     })
-    console.log(...formatted)
+    // It won't printed properly for multiple arguments
+    args.length == 1 ? console.log(...formatted) : console.log(...args)
   }
 }
 
@@ -444,10 +445,12 @@ export function last<T>(list: Array<T>, n?: number) {
 
 // each ---------------------------------------------------------------------------
 function each<T>(list: T[], f: (v: T, i: number) => void): void
+function each<K, V>(map: Map<K, V>, f: (v: V, k: K) => void): void
 function each<M extends {}, K extends keyof M>(map: M, f: (v: M[K], k: K) => void): void
 function each<T>(o: T[] | { [key: string]: T }, f: (v: T, i: something) => void): void {
-  if (o instanceof Array) for(let i = 0; i < o.length; i++) f(o[i], i)
-  else                    for(const k in o) if (o.hasOwnProperty(k)) f(o[k], k)
+  if      (o instanceof Array) for(let i = 0; i < o.length; i++) f(o[i], i)
+  else if (o instanceof Map)   for(const [k, v] of o) f(v, k)
+  else                         for(const k in o) if (o.hasOwnProperty(k)) f(o[k], k)
 }
 export { each }
 
@@ -520,7 +523,18 @@ function reject(o: something, f: something) { return partition(o, f)[1] }
 export { reject }
 
 // uniq ---------------------------------------------------------------------------
-export function uniq<T>(list: Array<T>): Array<T> { return list.filter((v, i, a) => a.indexOf(v) === i) }
+export function uniq<V, Key>(list: Array<V>, to_key?: (v: V) => Key): Array<V> {
+  const set = new Set<something>()
+  const _to_key = to_key || ((v: V) => v)
+  return list.filter((v) => {
+    const key = _to_key(v)
+    if (set.has(key)) return false
+    else {
+      set.add(key)
+      return true
+    }
+  })
+}
 
 // // pick ---------------------------------------------------------------------------
 // function pick<T>(list: Array<T>, keys: number[]): Array<T>
@@ -532,43 +546,44 @@ export function uniq<T>(list: Array<T>): Array<T> { return list.filter((v, i, a)
 
 
 // remove -------------------------------------------------------------------------
-function remove<T>(list: Array<T>, i: number): T | undefined
-function remove<T>(list: Array<T>, f: Predicate<T, number>): Array<T>
-function remove<T>(map: { [key: string]: T }, i: string): T | undefined
-function remove<T>(map: { [key: string]: T }, f: Predicate<T, string>): { [key: string]: T }
-function remove<T>(o: Array<T> | { [key: string]: T }, f: something) {
-  if (o instanceof Array) {
-    if (f instanceof Function) {
-      const [deleted, remained] = partition(o, f)
-      o.splice(0, remained.length, ...remained)
-      return deleted
-    } else {
-      if (f >= o.length) return undefined
-      const v = o[f]
-      o.splice(f, 1)
-      return v
-    }
-  } else {
-    if (f instanceof Function) {
-      const [deleted] = partition(o, f)
-      each(deleted, (_v, k) => delete o[k])
-      return deleted
-    } else {
-      if (!o.hasOwnProperty(f)) return undefined
-      const v = o[f]
-      delete o[f]
-      return v
-    }
-  }
-}
-export { remove }
+// function remove<V>(list: Array<V>, i: number): V | undefined
+// function remove<V>(list: Array<V>, f: Predicate<V, number>): Array<V>
+// function remove<V, K>(map: Map<K, V>, k: K): V | undefined
+// function remove<V, K>(map: Map<K, V>, f: Predicate<V, K>): Map<K, V>
+// function remove<V, K>(o: Array<V> | Map<K, V>, f: something) {
+//   if (o instanceof Array) {
+//     if (f instanceof Function) {
+//       const [deleted, remained] = partition(o, f)
+//       o.splice(0, remained.length, ...remained)
+//       return deleted
+//     } else {
+//       if (f >= o.length) return undefined
+//       const v = o[f]
+//       o.splice(f, 1)
+//       return v
+//     }
+//   } else {
+//     if (f instanceof Function) {
+//       const [deleted] = partition(o, f)
+//       each(deleted, (_v, k) => delete o[k])
+//       return deleted
+//     } else {
+//       if (!o.hasOwnProperty(f)) return undefined
+//       const v = o[f]
+//       delete o[f]
+//       return v
+//     }
+//   }
+// }
+// export { remove }
 
 
 // reduce -------------------------------------------------------------------------
-function reduce<A, T>(list: T[], accumulator: A, f: (accumulator: A, v: T, key: number) => A): A
-function reduce<A, T>(map: { [key: string]: T }, accumulator: A, f: (accumulator: A, v: T, key: string) => A): A
-function reduce<A, T>(
-  o: T[] | { [key: string]: T }, accumulator: A, f: (accumulator: A, v: T, key: something) => A
+function reduce<A, V>(list: V[], accumulator: A, f: (accumulator: A, v: V, key: number) => A): A
+function reduce<A, V, K>(map: Map<K, V>, accumulator: A, f: (accumulator: A, v: V, key: number) => A): A
+function reduce<A, V>(map: { [key: string]: V }, accumulator: A, f: (accumulator: A, v: V, key: string) => A): A
+function reduce<A, V>(
+  o: something, accumulator: A, f: (accumulator: A, v: V, key: something) => A
 ) {
   each(o as something, (v: something, i) => accumulator = f(accumulator, v, i))
   return accumulator
@@ -577,7 +592,8 @@ export { reduce }
 
 
 // keys ---------------------------------------------------------------------------
-function keys<T>(list: Array<T>): number[]
+function keys<V>(list: Array<V>): number[]
+function keys<V, K>(map: Map<K, V>): K[]
 // Adding `& string` because otherwise it would infer the type as `(string | number)[]`
 // see https://stackoverflow.com/questions/51808160/keyof-inferring-string-number-when-key-is-only-a-string
 function keys<T, O extends { [key: string]: T }>(map: O): (keyof O & string)[]
@@ -596,13 +612,30 @@ function values(o: something) {
 export { values }
 
 // map ----------------------------------------------------------------------------
-function map<T, R>(list: T[], f: (v: T, i: number) => R): R[]
+// function map<T, R>(list: T[], f: (v: T, i: number) => R): R[]
+// function map<M extends {}, K extends keyof M, R>(map: M, f: (v: M[K], k: K) => R): { [key in K]: R }
+// function map<T, R>(o: T[] | { [key: string]: T }, f: (v: T, k: something) => R) {
+//   if (o instanceof Array) return o.map(f)
+//   else {
+//     const mapped = {} as something
+//     each(o, (v, k) => mapped[k] = f(v, k))
+//     return mapped
+//   }
+// }
+// export { map }
+function map<V, R>(list: V[], f: (v: V, i: number) => R): R[]
+function map<K, V, R>(map: Map<K, V>, f: (v: V, k: K) => R): Map<K, R>
 function map<M extends {}, K extends keyof M, R>(map: M, f: (v: M[K], k: K) => R): { [key in K]: R }
-function map<T, R>(o: T[] | { [key: string]: T }, f: (v: T, k: something) => R) {
-  if (o instanceof Array) return o.map(f)
-  else {
+function map<K, V, R>(o: something, f: (v: V, k: something) => R) {
+  if        (o instanceof Array) {
+    return o.map(f)
+  } else if (o instanceof Map) {
+    const mapped = new Map<K, R>()
+    each(o, (v, k) => mapped.set(k, f(v, k)))
+    return mapped
+  } else {
     const mapped = {} as something
-    each(o, (v, k) => mapped[k] = f(v, k))
+    each(o, (v: something, k) => mapped[k] = f(v, k))
     return mapped
   }
 }
@@ -678,8 +711,14 @@ export function ensure_error(error: something, default_message = "Unknown error"
 
 // Error.toJSON -------------------------------------------------------------------
 // Otherwise JSON will be empty `{}`
-(Error.prototype as something).toJSON = function(this: something) {
+;(Error.prototype as something).toJSON = function(this: something) {
   return { message: this.message, stack: this.stack }
+}
+
+// Map.toJSON ---------------------------------------------------------------------
+// Otherwise JSON will be empty `{}`
+;(Map.prototype  as something).toJSON = function(this: something) {
+  return reduce(this, {}, (map: something, v, k) => { map[k] = v; return map })
 }
 
 

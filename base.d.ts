@@ -57,6 +57,7 @@ export { take };
 export declare function last<T>(list: Array<T>): T;
 export declare function last<T>(list: Array<T>, n: number): T[];
 declare function each<T>(list: T[], f: (v: T, i: number) => void): void;
+declare function each<K, V>(map: Map<K, V>, f: (v: V, k: K) => void): void;
 declare function each<M extends {}, K extends keyof M>(map: M, f: (v: M[K], k: K) => void): void;
 export { each };
 declare function find<T>(list: T[], v: T): T | undefined;
@@ -104,24 +105,15 @@ declare function reject<T>(map: {
     [key: string]: T;
 };
 export { reject };
-export declare function uniq<T>(list: Array<T>): Array<T>;
-declare function remove<T>(list: Array<T>, i: number): T | undefined;
-declare function remove<T>(list: Array<T>, f: Predicate<T, number>): Array<T>;
-declare function remove<T>(map: {
-    [key: string]: T;
-}, i: string): T | undefined;
-declare function remove<T>(map: {
-    [key: string]: T;
-}, f: Predicate<T, string>): {
-    [key: string]: T;
-};
-export { remove };
-declare function reduce<A, T>(list: T[], accumulator: A, f: (accumulator: A, v: T, key: number) => A): A;
-declare function reduce<A, T>(map: {
-    [key: string]: T;
-}, accumulator: A, f: (accumulator: A, v: T, key: string) => A): A;
+export declare function uniq<V, Key>(list: Array<V>, to_key?: (v: V) => Key): Array<V>;
+declare function reduce<A, V>(list: V[], accumulator: A, f: (accumulator: A, v: V, key: number) => A): A;
+declare function reduce<A, V, K>(map: Map<K, V>, accumulator: A, f: (accumulator: A, v: V, key: number) => A): A;
+declare function reduce<A, V>(map: {
+    [key: string]: V;
+}, accumulator: A, f: (accumulator: A, v: V, key: string) => A): A;
 export { reduce };
-declare function keys<T>(list: Array<T>): number[];
+declare function keys<V>(list: Array<V>): number[];
+declare function keys<V, K>(map: Map<K, V>): K[];
 declare function keys<T, O extends {
     [key: string]: T;
 }>(map: O): (keyof O & string)[];
@@ -131,7 +123,8 @@ declare function values<T>(map: {
     [key: string]: T;
 }): T[];
 export { values };
-declare function map<T, R>(list: T[], f: (v: T, i: number) => R): R[];
+declare function map<V, R>(list: V[], f: (v: V, i: number) => R): R[];
+declare function map<K, V, R>(map: Map<K, V>, f: (v: V, k: K) => R): Map<K, R>;
 declare function map<M extends {}, K extends keyof M, R>(map: M, f: (v: M[K], k: K) => R): {
     [key in K]: R;
 };

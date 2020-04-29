@@ -20,6 +20,7 @@
     "pretty": true,
     "declaration": true,
     "experimentalDecorators": true,
+    "downlevelIteration": true,
 
     "jsx": "react",
     "jsxFactory": "h"

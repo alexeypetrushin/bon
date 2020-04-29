@@ -20,8 +20,13 @@ export async function read_directory(path: string, type?: EntryType): Promise<st
 
 function read_file(path: string): Promise<Buffer>
 function read_file(path: string, options: { encoding: BufferEncoding }): Promise<string>
-function read_file(path: string, options?: something) {
-  return promisify(nodefs.readFile)(path, options) as something
+async function read_file(path: string, options?: something) {
+  try {
+    return await promisify(nodefs.readFile)(path, options) as something
+  } catch (e) {
+    // Because node.js error doesn't have stack trace
+    throw new Error(`can't read file '${path}' because of '${ensure_error(e).message}'`)
+  }
 }
 export { read_file }
 

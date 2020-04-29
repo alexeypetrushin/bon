@@ -59,12 +59,36 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var __spreadArrays = (this && this.__spreadArrays) || function () {
-    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
-    for (var r = Array(s), k = 0, i = 0; i < il; i++)
-        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
-            r[k] = a[j];
-    return r;
+var __read = (this && this.__read) || function (o, n) {
+    var m = typeof Symbol === "function" && o[Symbol.iterator];
+    if (!m) return o;
+    var i = m.call(o), r, ar = [], e;
+    try {
+        while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
+    }
+    catch (error) { e = { error: error }; }
+    finally {
+        try {
+            if (r && !r.done && (m = i["return"])) m.call(i);
+        }
+        finally { if (e) throw e.error; }
+    }
+    return ar;
+};
+var __spread = (this && this.__spread) || function () {
+    for (var ar = [], i = 0; i < arguments.length; i++) ar = ar.concat(__read(arguments[i]));
+    return ar;
+};
+var __values = (this && this.__values) || function(o) {
+    var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
+    if (m) return m.call(o);
+    if (o && typeof o.length === "number") return {
+        next: function () {
+            if (o && i >= o.length) o = void 0;
+            return { value: o && o[i++], done: !o };
+        }
+    };
+    throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 // Global variables for browser and node ------------------------------------------
@@ -103,13 +127,14 @@ function p() {
         args[_i] = arguments[_i];
     }
     if (has_windows)
-        console.log.apply(console, args);
+        console.log.apply(console, __spread(args));
     else {
         var formatted = args.map(function (v) {
             v = deep_map(v, map_to_json_if_defined);
             return typeof v == 'object' ? util_inspect(v, { breakLength: 80, colors: true }) : v;
         });
-        console.log.apply(console, formatted);
+        // It won't printed properly for multiple arguments
+        args.length == 1 ? console.log.apply(console, __spread(formatted)) : console.log.apply(console, __spread(args));
     }
 }
 exports.p = p;
@@ -117,32 +142,47 @@ var fetch = uniglobal.fetch || require('node-fetch');
 var inline_tests = [];
 exports.inline_test = function (fn) { inline_tests.push(fn); };
 exports.inline_test.run = function () { return __awaiter(void 0, void 0, void 0, function () {
-    var _i, inline_tests_1, test_1, e_1;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
+    var inline_tests_1, inline_tests_1_1, test_1, e_1_1, e_2;
+    var e_1, _a;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
             case 0:
-                _a.trys.push([0, 5, , 6]);
-                _i = 0, inline_tests_1 = inline_tests;
-                _a.label = 1;
+                _b.trys.push([0, 9, , 10]);
+                _b.label = 1;
             case 1:
-                if (!(_i < inline_tests_1.length)) return [3 /*break*/, 4];
-                test_1 = inline_tests_1[_i];
-                return [4 /*yield*/, test_1()];
+                _b.trys.push([1, 6, 7, 8]);
+                inline_tests_1 = __values(inline_tests), inline_tests_1_1 = inline_tests_1.next();
+                _b.label = 2;
             case 2:
-                _a.sent();
-                _a.label = 3;
+                if (!!inline_tests_1_1.done) return [3 /*break*/, 5];
+                test_1 = inline_tests_1_1.value;
+                return [4 /*yield*/, test_1()];
             case 3:
-                _i++;
-                return [3 /*break*/, 1];
+                _b.sent();
+                _b.label = 4;
             case 4:
+                inline_tests_1_1 = inline_tests_1.next();
+                return [3 /*break*/, 2];
+            case 5: return [3 /*break*/, 8];
+            case 6:
+                e_1_1 = _b.sent();
+                e_1 = { error: e_1_1 };
+                return [3 /*break*/, 8];
+            case 7:
+                try {
+                    if (inline_tests_1_1 && !inline_tests_1_1.done && (_a = inline_tests_1.return)) _a.call(inline_tests_1);
+                }
+                finally { if (e_1) throw e_1.error; }
+                return [7 /*endfinally*/];
+            case 8:
                 log('info', 'inline tests passed');
-                return [3 /*break*/, 6];
-            case 5:
-                e_1 = _a.sent();
-                log('error', e_1);
+                return [3 /*break*/, 10];
+            case 9:
+                e_2 = _b.sent();
+                log('error', e_2);
                 uniglobal.process && uniglobal.process.exit();
-                return [3 /*break*/, 6];
-            case 6: return [2 /*return*/];
+                return [3 /*break*/, 10];
+            case 10: return [2 /*return*/];
         }
     });
 }); };
@@ -156,7 +196,7 @@ function http_call(url, body, options) {
     return __awaiter(this, void 0, void 0, function () {
         function call_without_timeout() {
             return __awaiter(this, void 0, void 0, function () {
-                var copied_ptions, fetch_1, result, e_2;
+                var copied_ptions, fetch_1, result, e_3;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
                         case 0:
@@ -174,7 +214,7 @@ function http_call(url, body, options) {
                             return [4 /*yield*/, result.json()];
                         case 2: return [2 /*return*/, _a.sent()];
                         case 3:
-                            e_2 = _a.sent();
+                            e_3 = _a.sent();
                             return [3 /*break*/, 4];
                         case 4: return [2 /*return*/];
                     }
@@ -239,15 +279,15 @@ function deep_clone_and_sort(obj) {
     else if ('toJSON' in obj)
         return deep_clone_and_sort(obj.toJSON());
     else
-        return Object.assign.apply(Object, __spreadArrays([{}], Object.entries(obj)
+        return Object.assign.apply(Object, __spread([{}], Object.entries(obj)
             .sort(function (_a, _b) {
-            var key_a = _a[0];
-            var key_b = _b[0];
+            var _c = __read(_a, 1), key_a = _c[0];
+            var _d = __read(_b, 1), key_b = _d[0];
             return key_a.localeCompare(key_b);
         })
             .map(function (_a) {
             var _b;
-            var k = _a[0], v = _a[1];
+            var _c = __read(_a, 2), k = _c[0], v = _c[1];
             return (_b = {}, _b[k] = deep_clone_and_sort(v), _b);
         })));
 }
@@ -272,10 +312,10 @@ function deep_map(obj, map) {
     else if ('map' in obj)
         return obj.map(function (v) { return deep_map(v, map); });
     else
-        return Object.assign.apply(Object, __spreadArrays([{}], Object.entries(obj)
+        return Object.assign.apply(Object, __spread([{}], Object.entries(obj)
             .map(function (_a) {
             var _b;
-            var k = _a[0], v = _a[1];
+            var _c = __read(_a, 2), k = _c[0], v = _c[1];
             return (_b = {}, _b[k] = deep_map(v, map), _b);
         })));
 }
@@ -345,7 +385,7 @@ function log() {
     var level = ['info', 'warn', 'error', 'debug'].includes(args[0]) ? args.shift() : 'info';
     if (level == 'debug' && !exports.debug_enabled)
         return '';
-    var message = args[0], short = args[1], detailed = args[2];
+    var _a = __read(args, 3), message = _a[0], short = _a[1], detailed = _a[2];
     return exports.environment == 'development' ?
         log_in_development(level, message, short, detailed) :
         log_not_in_development(level, message, short, detailed);
@@ -374,7 +414,7 @@ function log_in_development(level, message, short, detailed) {
         id = md5(stable_json_stringify(arguments)).substr(0, 6);
         buff.push(id);
     }
-    console[level].apply(console, buff);
+    console[level].apply(console, __spread(buff));
     // Printing error separately in development
     if (error) {
         var clean_error = ensure_error(error);
@@ -400,7 +440,7 @@ function log_not_in_development(level, message, short, detailed) {
         buff.push(id);
     }
     // Printing
-    console[level].apply(console, buff);
+    console[level].apply(console, __spread(buff));
     return id;
 }
 // export function logWithUser(
@@ -496,9 +536,24 @@ function last(list, n) {
 }
 exports.last = last;
 function each(o, f) {
+    var e_4, _a;
     if (o instanceof Array)
         for (var i = 0; i < o.length; i++)
             f(o[i], i);
+    else if (o instanceof Map)
+        try {
+            for (var o_1 = __values(o), o_1_1 = o_1.next(); !o_1_1.done; o_1_1 = o_1.next()) {
+                var _b = __read(o_1_1.value, 2), k = _b[0], v = _b[1];
+                f(v, k);
+            }
+        }
+        catch (e_4_1) { e_4 = { error: e_4_1 }; }
+        finally {
+            try {
+                if (o_1_1 && !o_1_1.done && (_a = o_1.return)) _a.call(o_1);
+            }
+            finally { if (e_4) throw e_4.error; }
+        }
     else
         for (var k in o)
             if (o.hasOwnProperty(k))
@@ -538,7 +593,7 @@ function partition(o, splitter) {
 exports.partition = partition;
 // sort ---------------------------------------------------------------------------
 function sort(list, compare_fn) {
-    list = __spreadArrays(list);
+    list = __spread(list);
     list.sort(compare_fn);
     return list;
 }
@@ -548,39 +603,20 @@ exports.select = select;
 function reject(o, f) { return partition(o, f)[1]; }
 exports.reject = reject;
 // uniq ---------------------------------------------------------------------------
-function uniq(list) { return list.filter(function (v, i, a) { return a.indexOf(v) === i; }); }
-exports.uniq = uniq;
-function remove(o, f) {
-    if (o instanceof Array) {
-        if (f instanceof Function) {
-            var _a = partition(o, f), deleted = _a[0], remained = _a[1];
-            o.splice.apply(o, __spreadArrays([0, remained.length], remained));
-            return deleted;
-        }
+function uniq(list, to_key) {
+    var set = new Set();
+    var _to_key = to_key || (function (v) { return v; });
+    return list.filter(function (v) {
+        var key = _to_key(v);
+        if (set.has(key))
+            return false;
         else {
-            if (f >= o.length)
-                return undefined;
-            var v = o[f];
-            o.splice(f, 1);
-            return v;
+            set.add(key);
+            return true;
         }
-    }
-    else {
-        if (f instanceof Function) {
-            var deleted = partition(o, f)[0];
-            each(deleted, function (_v, k) { return delete o[k]; });
-            return deleted;
-        }
-        else {
-            if (!o.hasOwnProperty(f))
-                return undefined;
-            var v = o[f];
-            delete o[f];
-            return v;
-        }
-    }
+    });
 }
-exports.remove = remove;
+exports.uniq = uniq;
 function reduce(o, accumulator, f) {
     each(o, function (v, i) { return accumulator = f(accumulator, v, i); });
     return accumulator;
@@ -595,12 +631,18 @@ function values(o) {
 }
 exports.values = values;
 function map(o, f) {
-    if (o instanceof Array)
+    if (o instanceof Array) {
         return o.map(f);
-    else {
-        var mapped_1 = {};
-        each(o, function (v, k) { return mapped_1[k] = f(v, k); });
+    }
+    else if (o instanceof Map) {
+        var mapped_1 = new Map();
+        each(o, function (v, k) { return mapped_1.set(k, f(v, k)); });
         return mapped_1;
+    }
+    else {
+        var mapped_2 = {};
+        each(o, function (v, k) { return mapped_2[k] = f(v, k); });
+        return mapped_2;
     }
 }
 exports.map = map;
@@ -614,10 +656,10 @@ exports.round = round;
 function shuffle(list, seed) {
     var _a;
     var random = seed !== undefined ? seedrandom(seed) : function () { return Math.random(); };
-    list = __spreadArrays(list);
+    list = __spread(list);
     for (var i = list.length - 1; i > 0; i--) {
         var j = Math.floor(random() * (i + 1));
-        _a = [list[j], list[i]], list[i] = _a[0], list[j] = _a[1];
+        _a = __read([list[j], list[i]], 2), list[i] = _a[0], list[j] = _a[1];
     }
     return list;
 }
@@ -632,7 +674,7 @@ function debounce(fn, timeout) {
         }
         if (timer)
             clearTimeout(timer);
-        timer = setTimeout(function () { return fn.apply(void 0, args); }, timeout);
+        timer = setTimeout(function () { return fn.apply(void 0, __spread(args)); }, timeout);
     });
 }
 exports.debounce = debounce;
@@ -684,13 +726,17 @@ function ensure_error(error, default_message) {
 exports.ensure_error = ensure_error;
 // Error.toJSON -------------------------------------------------------------------
 // Otherwise JSON will be empty `{}`
+;
 Error.prototype.toJSON = function () {
     return { message: this.message, stack: this.stack };
+};
+Map.prototype.toJSON = function () {
+    return reduce(this, {}, function (map, v, k) { map[k] = v; return map; });
 };
 // Test ---------------------------------------------------------------------------
 function test(title, fn) {
     return __awaiter(this, void 0, void 0, function () {
-        var e_3;
+        var e_5;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -700,9 +746,9 @@ function test(title, fn) {
                     _a.sent();
                     return [3 /*break*/, 3];
                 case 2:
-                    e_3 = _a.sent();
+                    e_5 = _a.sent();
                     log('error', title);
-                    throw e_3;
+                    throw e_5;
                 case 3: return [2 /*return*/];
             }
         });

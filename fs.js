@@ -46,6 +46,37 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __read = (this && this.__read) || function (o, n) {
+    var m = typeof Symbol === "function" && o[Symbol.iterator];
+    if (!m) return o;
+    var i = m.call(o), r, ar = [], e;
+    try {
+        while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
+    }
+    catch (error) { e = { error: error }; }
+    finally {
+        try {
+            if (r && !r.done && (m = i["return"])) m.call(i);
+        }
+        finally { if (e) throw e.error; }
+    }
+    return ar;
+};
+var __spread = (this && this.__spread) || function () {
+    for (var ar = [], i = 0; i < arguments.length; i++) ar = ar.concat(__read(arguments[i]));
+    return ar;
+};
+var __values = (this && this.__values) || function(o) {
+    var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
+    if (m) return m.call(o);
+    if (o && typeof o.length === "number") return {
+        next: function () {
+            if (o && i >= o.length) o = void 0;
+            return { value: o && o[i++], done: !o };
+        }
+    };
+    throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 var base_1 = require("./base");
 var nodefs = require("fs");
@@ -59,41 +90,71 @@ function resolve() {
     for (var _i = 0; _i < arguments.length; _i++) {
         paths[_i] = arguments[_i];
     }
-    return (_a = require('path')).resolve.apply(_a, paths);
+    return (_a = require('path')).resolve.apply(_a, __spread(paths));
 }
 exports.resolve = resolve;
 function read_directory(path, type) {
     return __awaiter(this, void 0, void 0, function () {
-        var list, filtered, _i, list_1, path_1;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
+        var list, filtered, list_1, list_1_1, path_1, e_1_1;
+        var e_1, _a;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
                 case 0: return [4 /*yield*/, util_1.promisify(nodefs.readdir)(path)];
                 case 1:
-                    list = (_a.sent()).map(function (name) { return resolve(path, name); });
+                    list = (_b.sent()).map(function (name) { return resolve(path, name); });
                     if (!type)
                         return [2 /*return*/, list];
                     filtered = [];
-                    _i = 0, list_1 = list;
-                    _a.label = 2;
+                    _b.label = 2;
                 case 2:
-                    if (!(_i < list_1.length)) return [3 /*break*/, 5];
-                    path_1 = list_1[_i];
-                    return [4 /*yield*/, get_type(path_1)];
+                    _b.trys.push([2, 7, 8, 9]);
+                    list_1 = __values(list), list_1_1 = list_1.next();
+                    _b.label = 3;
                 case 3:
-                    if ((_a.sent()) == type)
-                        filtered.push(path_1);
-                    _a.label = 4;
+                    if (!!list_1_1.done) return [3 /*break*/, 6];
+                    path_1 = list_1_1.value;
+                    return [4 /*yield*/, get_type(path_1)];
                 case 4:
-                    _i++;
-                    return [3 /*break*/, 2];
-                case 5: return [2 /*return*/, filtered];
+                    if ((_b.sent()) == type)
+                        filtered.push(path_1);
+                    _b.label = 5;
+                case 5:
+                    list_1_1 = list_1.next();
+                    return [3 /*break*/, 3];
+                case 6: return [3 /*break*/, 9];
+                case 7:
+                    e_1_1 = _b.sent();
+                    e_1 = { error: e_1_1 };
+                    return [3 /*break*/, 9];
+                case 8:
+                    try {
+                        if (list_1_1 && !list_1_1.done && (_a = list_1.return)) _a.call(list_1);
+                    }
+                    finally { if (e_1) throw e_1.error; }
+                    return [7 /*endfinally*/];
+                case 9: return [2 /*return*/, filtered];
             }
         });
     });
 }
 exports.read_directory = read_directory;
 function read_file(path, options) {
-    return util_1.promisify(nodefs.readFile)(path, options);
+    return __awaiter(this, void 0, void 0, function () {
+        var e_2;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    _a.trys.push([0, 2, , 3]);
+                    return [4 /*yield*/, util_1.promisify(nodefs.readFile)(path, options)];
+                case 1: return [2 /*return*/, _a.sent()];
+                case 2:
+                    e_2 = _a.sent();
+                    // Because node.js error doesn't have stack trace
+                    throw new Error("can't read file '" + path + "' because of '" + base_1.ensure_error(e_2).message + "'");
+                case 3: return [2 /*return*/];
+            }
+        });
+    });
 }
 exports.read_file = read_file;
 // Creates parent directory automatically
@@ -198,7 +259,7 @@ function make_directory(path) {
 exports.make_directory = make_directory;
 function exists(path) {
     return __awaiter(this, void 0, void 0, function () {
-        var e_1;
+        var e_3;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -208,7 +269,7 @@ function exists(path) {
                     _a.sent();
                     return [2 /*return*/, true];
                 case 2:
-                    e_1 = _a.sent();
+                    e_3 = _a.sent();
                     return [2 /*return*/, false];
                 case 3: return [2 /*return*/];
             }
@@ -236,7 +297,7 @@ function delete_file(path) {
 exports.delete_file = delete_file;
 function delete_directory(path, options) {
     return __awaiter(this, void 0, void 0, function () {
-        var e_2;
+        var e_4;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0: return [4 /*yield*/, exists(path)];
@@ -252,10 +313,10 @@ function delete_directory(path, options) {
                     _a.sent();
                     return [3 /*break*/, 5];
                 case 4:
-                    e_2 = _a.sent();
+                    e_4 = _a.sent();
                     // Because node fs errors doesn't have stack trace information
                     // https://stackoverflow.com/questions/61155350/why-theres-no-stack-trace-in-node-fs-rmdir-error
-                    throw new Error("can't delete directory '" + path + "' because of '" + base_1.ensure_error(e_2).message + "'");
+                    throw new Error("can't delete directory '" + path + "' because of '" + base_1.ensure_error(e_4).message + "'");
                 case 5: return [2 /*return*/];
             }
         });
