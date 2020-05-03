@@ -591,13 +591,78 @@ function partition(o, splitter) {
     }
 }
 exports.partition = partition;
-// sort ---------------------------------------------------------------------------
-function sort(list, compare_fn) {
-    list = __spread(list);
-    list.sort(compare_fn);
-    return list;
+function sort(list, comparator) {
+    if (list.length == 0)
+        return list;
+    else {
+        if (comparator) {
+            list = __spread(list);
+            list.sort(comparator);
+            return list;
+        }
+        else {
+            if (typeof list[0] == 'number')
+                comparator = function (a, b) { return a - b; };
+            else if (typeof list[0] == 'string')
+                comparator = function (a, b) { return a.localeCompare(b); };
+            else
+                throw new Error("the 'comparator' required to sort a list of non numbers or strings");
+            list = __spread(list);
+            list.sort(comparator);
+            return list;
+        }
+    }
 }
 exports.sort = sort;
+function sort_by(list, by) {
+    if (list.length == 0)
+        return list;
+    else {
+        var comparator = void 0;
+        if (typeof by(list[0]) == 'number')
+            comparator = function (a, b) { return by(a) - by(b); };
+        else if (typeof by(list[0]) == 'string')
+            comparator = function (a, b) { return by(a).localeCompare(by(b)); };
+        else
+            throw new Error("invalid return type for 'by'");
+        list = __spread(list);
+        list.sort(comparator);
+        return list;
+    }
+}
+exports.sort_by = sort_by;
+// map_with_rank -------------------------------------------------------------------------
+// Attach to every element its rank in the ordered list, ordered according to `order_by` function.
+function map_with_rank(list, order_by, map) {
+    // Sorting accourding to rank
+    var list_with_index = list.map(function (v, i) { return ({ v: v, original_i: i, order_by: order_by(v) }); });
+    var sorted = sort_by(list_with_index, function (_a) {
+        var order_by = _a.order_by;
+        return order_by;
+    });
+    // Adding rank, if values returned by `order_by` are the same, the rank also the same
+    var sorted_with_rank = [];
+    var rank = 0;
+    for (var i = 0; i < sorted.length; i++) {
+        var current = sorted[i];
+        if (i > 0 && current.order_by != sorted[i - 1].order_by)
+            rank++;
+        sorted_with_rank.push(__assign(__assign({}, current), { rank: rank }));
+    }
+    // Restoring original order and mapping
+    var original_with_rank = sort_by(sorted_with_rank, function (_a) {
+        var original_i = _a.original_i;
+        return original_i;
+    });
+    return original_with_rank.map(function (_a) {
+        var v = _a.v, rank = _a.rank;
+        return map(v, rank);
+    });
+}
+exports.map_with_rank = map_with_rank;
+exports.inline_test(function () {
+    exports.assert.equal(map_with_rank([4, 2, 3, 4, 5, 7, 5], function (v) { return v; }, function (v, r) { return [v, r]; }), [[4, 2], [2, 0], [3, 1], [4, 2], [5, 3], [7, 4], [5, 3]]);
+});
 function select(o, f) { return partition(o, f)[0]; }
 exports.select = select;
 function reject(o, f) { return partition(o, f)[1]; }

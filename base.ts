@@ -497,12 +497,82 @@ export { partition }
 
 
 // sort ---------------------------------------------------------------------------
-function sort<T>(list: Array<T>, compare_fn?: (a: T, b: T) => number): Array<T> {
-  list = [...list]
-  list.sort(compare_fn)
-  return list
+function sort(list: string[], comparator?: (a: string, b: string) => number): string[]
+function sort(list: number[], comparator?: (a: number, b: number) => number): number[]
+function sort<V>(list: V[], comparator?: (a: V, b: V) => number): V[] {
+  if (list.length == 0) return list
+  else {
+    if (comparator) {
+      list = [...list]
+      list.sort(comparator)
+      return list
+    } else {
+      if      (typeof list[0] == 'number')
+        comparator = function(a: number, b: number) { return a - b } as something
+      else if (typeof list[0] == 'string')
+        comparator = function(a: string, b: string) { return a.localeCompare(b) } as something
+      else
+        throw new Error(`the 'comparator' required to sort a list of non numbers or strings`)
+
+      list = [...list]
+      list.sort(comparator)
+      return list
+    }
+  }
 }
 export { sort }
+
+
+// sort_by -------------------------------------------------------------------------------
+function sort_by<V>(list: V[], by: (v: V) => string): V[]
+function sort_by<V>(list: V[], by: (v: V) => number): V[]
+function sort_by<V>(list: V[], by: (v: V) => string | number): V[] {
+  if (list.length == 0) return list
+  else {
+    let comparator: (a: V, b: V) => number
+    if      (typeof by(list[0]) == 'number')
+      comparator = function(a, b) { return (by(a) as number) - (by(b) as number) }
+    else if (typeof by(list[0]) == 'string')
+      comparator = function(a, b) { return (by(a) as string).localeCompare(by(b) as string) }
+    else
+      throw new Error(`invalid return type for 'by'`)
+
+    list = [...list]
+    list.sort(comparator)
+    return list
+  }
+}
+export { sort_by }
+
+
+// map_with_rank -------------------------------------------------------------------------
+// Attach to every element its rank in the ordered list, ordered according to `order_by` function.
+export function map_with_rank<V, R>(list: V[], order_by: (v: V) => number, map: (v: V, rank: number) => R): R[] {
+  // Sorting accourding to rank
+  const list_with_index = list.map((v, i) => ({ v, original_i: i, order_by: order_by(v) }))
+  const sorted = sort_by(list_with_index, ({ order_by }) => order_by)
+
+  // Adding rank, if values returned by `order_by` are the same, the rank also the same
+  const sorted_with_rank: { v: V, original_i: number, order_by: number, rank: number }[] = []
+  let rank = 0
+  for (let i = 0; i < sorted.length; i++) {
+    const current = sorted[i]
+    if (i > 0 && current.order_by != sorted[i - 1].order_by) rank++
+    sorted_with_rank.push({ ...current, rank })
+  }
+
+  // Restoring original order and mapping
+  const original_with_rank = sort_by(sorted_with_rank, ({ original_i }) => original_i)
+  return original_with_rank.map(({ v, rank }) => map(v, rank))
+}
+inline_test(() => {
+  assert.equal(
+    map_with_rank(
+      [ 4,        2,        3,        4,        5,        7,        5], (v) => v, (v, r) => [v, r]
+    ),
+    [ [ 4, 2 ], [ 2, 0 ], [ 3, 1 ], [ 4, 2 ], [ 5, 3 ], [ 7, 4 ], [ 5, 3 ] ]
+  )
+})
 
 
 // select -------------------------------------------------------------------------

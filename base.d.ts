@@ -77,8 +77,13 @@ declare function partition<T>(list: Array<T>, keys: number[]): [Array<T>, Array<
 declare function partition<M extends {}, K extends keyof M>(map: M, f: Predicate<M[keyof M], keyof M>): [M, M];
 declare function partition<M extends {}, K extends keyof M>(map: M, keys: (keyof M)[]): [Pick<M, K>, Exclude<M, K>];
 export { partition };
-declare function sort<T>(list: Array<T>, compare_fn?: (a: T, b: T) => number): Array<T>;
+declare function sort(list: string[], comparator?: (a: string, b: string) => number): string[];
+declare function sort(list: number[], comparator?: (a: number, b: number) => number): number[];
 export { sort };
+declare function sort_by<V>(list: V[], by: (v: V) => string): V[];
+declare function sort_by<V>(list: V[], by: (v: V) => number): V[];
+export { sort_by };
+export declare function map_with_rank<V, R>(list: V[], order_by: (v: V) => number, map: (v: V, rank: number) => R): R[];
 declare function select<T>(list: Array<T>, f: Predicate<T, number>): Array<T>;
 declare function select<T>(list: Array<T>, keys: number[]): Array<T>;
 declare function select<T>(map: {
