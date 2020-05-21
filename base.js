@@ -121,6 +121,12 @@ var util_inspect = function (v, options) {
     catch (_e) { }
     return util_inspect(v, options);
 };
+function pretty_print(v, colors) {
+    if (colors === void 0) { colors = false; }
+    v = deep_map(v, map_to_json_if_defined);
+    return typeof v == 'object' ? util_inspect(v, { breakLength: 80, colors: colors }) : v;
+}
+exports.pretty_print = pretty_print;
 function p() {
     var args = [];
     for (var _i = 0; _i < arguments.length; _i++) {
@@ -129,10 +135,7 @@ function p() {
     if (has_windows)
         console.log.apply(console, __spread(args));
     else {
-        var formatted = args.map(function (v) {
-            v = deep_map(v, map_to_json_if_defined);
-            return typeof v == 'object' ? util_inspect(v, { breakLength: 80, colors: true }) : v;
-        });
+        var formatted = args.map(function (v) { return pretty_print(v, true); });
         // It won't printed properly for multiple arguments
         args.length == 1 ? console.log.apply(console, __spread(formatted)) : console.log.apply(console, __spread(args));
     }
@@ -190,6 +193,17 @@ var run_inline_tests = (uniglobal.process && uniglobal.process.env &&
     uniglobal.process.env.inline_test) == 'true';
 if (run_inline_tests)
     uniglobal.setTimeout(exports.inline_test.run, 0);
+exports.all_docs = [];
+function doc() {
+    var docs = [];
+    for (var _i = 0; _i < arguments.length; _i++) {
+        docs[_i] = arguments[_i];
+    }
+    exports.all_docs.push.apply(exports.all_docs, __spread(docs));
+}
+exports.doc = doc;
+function as_code(code) { return "\`\`\`\n" + code + "\n\`\`\`"; }
+exports.as_code = as_code;
 function http_call(url, body, options) {
     if (body === void 0) { body = {}; }
     if (options === void 0) { options = {}; }
@@ -264,6 +278,16 @@ exports.assert.warn = function (condition, message) { if (!condition)
     log('warn', message || 'Assertion error!'); };
 exports.assert.equal = function (a, b, message) {
     if (!is_equal(a, b)) {
+        var message_string = message ? (message instanceof Function ? message() : message) :
+            "Assertion error: " + stable_json_stringify(a, true) + " != " + stable_json_stringify(b, true);
+        throw new Error(message_string);
+    }
+};
+exports.assert.approx_equal = function (a, b, message, delta_relative) {
+    delta_relative = delta_relative || 0.001;
+    var average = (Math.abs(a) + Math.abs(b)) / 2;
+    var delta_absolute = average * delta_relative;
+    if (Math.abs(a - b) > delta_absolute) {
         var message_string = message ? (message instanceof Function ? message() : message) :
             "Assertion error: " + stable_json_stringify(a, true) + " != " + stable_json_stringify(b, true);
         throw new Error(message_string);
@@ -535,6 +559,13 @@ function last(list, n) {
     }
 }
 exports.last = last;
+// reverse -------------------------------------------------------------------------------
+function reverse(list) {
+    list = __spread(list);
+    list.reverse();
+    return list;
+}
+exports.reverse = reverse;
 function each(o, f) {
     var e_4, _a;
     if (o instanceof Array)
@@ -574,6 +605,23 @@ function find(o, finder) {
     return undefined;
 }
 exports.find = find;
+function group_by(list, f) {
+    return reduce(list, new Map(), function (acc, v, i) {
+        var key = f(v, i);
+        var group = acc.get(key);
+        if (!group) {
+            group = [];
+            acc.set(key, group);
+        }
+        group.push(v);
+        return acc;
+    });
+}
+exports.group_by = group_by;
+function entries(map) {
+    return map instanceof Map ? Array.from(map) : Object.entries(map);
+}
+exports.entries = entries;
 function has(o, finder) { return !!find(o, finder); }
 exports.has = has;
 function partition(o, splitter) {
@@ -631,44 +679,28 @@ function sort_by(list, by) {
     }
 }
 exports.sort_by = sort_by;
-// map_with_rank -------------------------------------------------------------------------
-// Attach to every element its rank in the ordered list, ordered according to `order_by` function.
-function map_with_rank(list, order_by, map) {
-    // Sorting accourding to rank
-    var list_with_index = list.map(function (v, i) { return ({ v: v, original_i: i, order_by: order_by(v) }); });
-    var sorted = sort_by(list_with_index, function (_a) {
-        var order_by = _a.order_by;
-        return order_by;
-    });
-    // Adding rank, if values returned by `order_by` are the same, the rank also the same
-    var sorted_with_rank = [];
-    var rank = 0;
-    for (var i = 0; i < sorted.length; i++) {
-        var current = sorted[i];
-        if (i > 0 && current.order_by != sorted[i - 1].order_by)
-            rank++;
-        sorted_with_rank.push(__assign(__assign({}, current), { rank: rank }));
+function filter_map(o, f) {
+    if (o instanceof Array) {
+        return o.filter(function (v, i) { return f(v, i) !== false; });
     }
-    // Restoring original order and mapping
-    var original_with_rank = sort_by(sorted_with_rank, function (_a) {
-        var original_i = _a.original_i;
-        return original_i;
-    });
-    return original_with_rank.map(function (_a) {
-        var v = _a.v, rank = _a.rank;
-        return map(v, rank);
-    });
+    else if (o instanceof Map) {
+        var filtered_1 = new Map();
+        each(o, function (v, k) { if (f(v, k) !== false)
+            filtered_1.set(k, v); });
+        return filtered_1;
+    }
+    else {
+        var filtered_2 = {};
+        each(o, function (v, k) { if (f(v, k) !== false)
+            filtered_2[k] = v; });
+        return filtered_2;
+    }
 }
-exports.map_with_rank = map_with_rank;
-exports.inline_test(function () {
-    exports.assert.equal(map_with_rank([4, 2, 3, 4, 5, 7, 5], function (v) { return v; }, function (v, r) { return [v, r]; }), [[4, 2], [2, 0], [3, 1], [4, 2], [5, 3], [7, 4], [5, 3]]);
-});
-function select(o, f) { return partition(o, f)[0]; }
-exports.select = select;
+exports.filter_map = filter_map;
 function reject(o, f) { return partition(o, f)[1]; }
 exports.reject = reject;
 // uniq ---------------------------------------------------------------------------
-function uniq(list, to_key) {
+function unique(list, to_key) {
     var set = new Set();
     var _to_key = to_key || (function (v) { return v; });
     return list.filter(function (v) {
@@ -681,7 +713,7 @@ function uniq(list, to_key) {
         }
     });
 }
-exports.uniq = uniq;
+exports.unique = unique;
 function reduce(o, accumulator, f) {
     each(o, function (v, i) { return accumulator = f(accumulator, v, i); });
     return accumulator;
@@ -695,6 +727,11 @@ function values(o) {
     return reduce(o, [], function (list, v) { list.push(v); return list; });
 }
 exports.values = values;
+// sum -----------------------------------------------------------------------------------
+function sum(list) {
+    return reduce(list, 0, function (sum, v) { return sum + v; });
+}
+exports.sum = sum;
 function map(o, f) {
     if (o instanceof Array) {
         return o.map(f);
@@ -714,9 +751,14 @@ exports.map = map;
 // round --------------------------------------------------------------------------
 function round(v, digits) {
     if (digits === void 0) { digits = 0; }
-    return digits == 0 ? Math.round(v) : Math.round(v * Math.pow(10, digits)) / Math.pow(10, digits);
+    return digits == 0 ?
+        Math.round(v) :
+        Math.round((v + Number.EPSILON) * Math.pow(10, digits)) / Math.pow(10, digits);
 }
 exports.round = round;
+exports.inline_test(function () {
+    exports.assert.equal(round(0.05860103881518906, 2), 0.06);
+});
 // shuffle ------------------------------------------------------------------------
 function shuffle(list, seed) {
     var _a;

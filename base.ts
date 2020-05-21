@@ -34,13 +34,14 @@ let util_inspect = (v: something, options: something): string => {
 
   return util_inspect(v, options)
 }
+export function pretty_print(v: something, colors = false) {
+  v = deep_map(v, map_to_json_if_defined)
+  return typeof v == 'object' ? util_inspect(v, { breakLength: 80, colors }) : v
+}
 export function p(...args: something): void {
   if (has_windows) console.log(...args)
   else {
-    const formatted = args.map((v: something) => {
-      v = deep_map(v, map_to_json_if_defined)
-      return typeof v == 'object' ? util_inspect(v, { breakLength: 80, colors: true }) : v
-    })
+    const formatted = args.map((v: something) => pretty_print(v, true))
     // It won't printed properly for multiple arguments
     args.length == 1 ? console.log(...formatted) : console.log(...args)
   }
@@ -70,6 +71,23 @@ inline_test.run = async () => {
 const run_inline_tests = (uniglobal.process && uniglobal.process.env &&
   uniglobal.process.env.inline_test) == 'true'
 if (run_inline_tests) uniglobal.setTimeout(inline_test.run, 0)
+
+
+// documentation -------------------------------------------------------------------------
+export interface TextDoc {
+  readonly tags?:  string[]
+  readonly title:  string
+  readonly text:   string
+}
+export interface TodoDoc {
+  readonly priority?: 'low' | 'normal' | 'high'
+  readonly tags?:     string[]
+  readonly todo:      string
+}
+export type Doc = TextDoc | TodoDoc
+export const all_docs: Doc[] = []
+export function doc(...docs: Doc[]) { all_docs.push(...docs) }
+export function as_code(code: string) { return "\`\`\`\n" + code + "\n\`\`\`" }
 
 // http_call ----------------------------------------------------------------------
 interface HttpCallOptions {
@@ -127,6 +145,7 @@ export interface Assert {
   (condition: boolean, message?: string | (() => string)): void
   warn(condition: boolean, message?: string | (() => string)): void
   equal(a: unknown, b: unknown, message?: string | (() => string)): void
+  approx_equal(a: number, b: number, message?: string | (() => string), delta_relative?: number): void
 }
 export const assert = <Assert>function(condition, message): void {
   const message_string = message ? (message instanceof Function ? message() : message) : 'Assertion error!'
@@ -135,6 +154,16 @@ export const assert = <Assert>function(condition, message): void {
 assert.warn = (condition, message) => { if (!condition) log('warn', message || 'Assertion error!') }
 assert.equal = (a, b, message) => {
   if (!is_equal(a, b)) {
+    const message_string = message ? (message instanceof Function ? message() : message) :
+      `Assertion error: ${stable_json_stringify(a, true)} != ${stable_json_stringify(b, true)}`
+    throw new Error(message_string)
+  }
+}
+assert.approx_equal = (a, b, message, delta_relative) => {
+  delta_relative = delta_relative || 0.001
+  const average = (Math.abs(a) + Math.abs(b)) / 2
+  const delta_absolute = average * delta_relative
+  if (Math.abs(a - b) > delta_absolute) {
     const message_string = message ? (message instanceof Function ? message() : message) :
       `Assertion error: ${stable_json_stringify(a, true)} != ${stable_json_stringify(b, true)}`
     throw new Error(message_string)
@@ -443,6 +472,14 @@ export function last<T>(list: Array<T>, n?: number) {
 }
 
 
+// reverse -------------------------------------------------------------------------------
+export function reverse<T>(list: T[]): T[] {
+  list = [...list]
+  list.reverse()
+  return list
+}
+
+
 // each ---------------------------------------------------------------------------
 function each<T>(list: T[], f: (v: T, i: number) => void): void
 function each<K, V>(map: Map<K, V>, f: (v: V, k: K) => void): void
@@ -466,6 +503,34 @@ function find<T>(o: T[] | { [key: string]: T }, finder: T | ((v: T, i: something
   return undefined
 }
 export { find }
+
+
+// group_by ------------------------------------------------------------------------------
+function group_by<V>(list: V[], f: (v: V, i: number) => number): Map<number, V[]>
+function group_by<V>(list: V[], f: (v: V, i: number) => string): Map<string, V[]>
+function group_by<V>(list: V[], f: (v: V, i: something) => something): Map<something, V[]> {
+  return reduce(list, new Map<string | number, V[]>(), (acc, v, i) => {
+    const key = f(v, i)
+    let group = acc.get(key)
+    if (!group) {
+      group = []
+      acc.set(key, group)
+    }
+    group.push(v)
+    return acc
+  })
+}
+export { group_by }
+
+
+// entries ------------------------------------------------------------------------------
+function entries<K, V>(map: Map<K, V>): [K, V][]
+function entries<V>(map: { [key: string]: V }): [string, V][]
+function entries<K, V>(map: Map<K, V> | { [key: string]: V }): [K | string, V][] {
+  return map instanceof Map ? Array.from(map) : Object.entries(map)
+}
+export { entries }
+
 
 // has ----------------------------------------------------------------------------
 function has<T>(list: T[], v: T): boolean
@@ -545,43 +610,25 @@ function sort_by<V>(list: V[], by: (v: V) => string | number): V[] {
 export { sort_by }
 
 
-// map_with_rank -------------------------------------------------------------------------
-// Attach to every element its rank in the ordered list, ordered according to `order_by` function.
-export function map_with_rank<V, R>(list: V[], order_by: (v: V) => number, map: (v: V, rank: number) => R): R[] {
-  // Sorting accourding to rank
-  const list_with_index = list.map((v, i) => ({ v, original_i: i, order_by: order_by(v) }))
-  const sorted = sort_by(list_with_index, ({ order_by }) => order_by)
-
-  // Adding rank, if values returned by `order_by` are the same, the rank also the same
-  const sorted_with_rank: { v: V, original_i: number, order_by: number, rank: number }[] = []
-  let rank = 0
-  for (let i = 0; i < sorted.length; i++) {
-    const current = sorted[i]
-    if (i > 0 && current.order_by != sorted[i - 1].order_by) rank++
-    sorted_with_rank.push({ ...current, rank })
+// filter_map -------------------------------------------------------------------------
+function filter_map<V, S>(list: V[], f: (v: V, i: number) => S | false): S[]
+function filter_map<V, S>(map: Map<number, V>, f: (v: V, k: number) => S | false): Map<number, S>
+function filter_map<V, S>(map: Map<string, V>, f: (v: V, k: string) => S | false): Map<string, S>
+function filter_map<V, S>(map: { [key: string]: V }, f: (v: V, k: string) => S | false): { [key: string]: S }
+function filter_map(o: something, f: something): something {
+  if (o instanceof Array) {
+    return o.filter((v, i) => f(v, i) !== false)
+  } else if (o instanceof Map) {
+    const filtered = new Map<something, something>()
+    each(o, (v, k) => { if (f(v, k) !== false) filtered.set(k, v) })
+    return filtered
+  } else {
+    const filtered: something = {}
+    each(o, (v, k) => { if (f(v, k) !== false) filtered[k] = v })
+    return filtered
   }
-
-  // Restoring original order and mapping
-  const original_with_rank = sort_by(sorted_with_rank, ({ original_i }) => original_i)
-  return original_with_rank.map(({ v, rank }) => map(v, rank))
 }
-inline_test(() => {
-  assert.equal(
-    map_with_rank(
-      [ 4,        2,        3,        4,        5,        7,        5], (v) => v, (v, r) => [v, r]
-    ),
-    [ [ 4, 2 ], [ 2, 0 ], [ 3, 1 ], [ 4, 2 ], [ 5, 3 ], [ 7, 4 ], [ 5, 3 ] ]
-  )
-})
-
-
-// select -------------------------------------------------------------------------
-function select<T>(list: Array<T>, f: Predicate<T, number>): Array<T>
-function select<T>(list: Array<T>, keys: number[]): Array<T>
-function select<T>(map: { [key: string]: T }, f: Predicate<T, string>): { [key: string]: T }
-function select<T>(map: { [key: string]: T }, keys: string[]): { [key: string]: T }
-function select(o: something, f: something) { return partition(o, f)[0] }
-export { select }
+export { filter_map }
 
 
 // reject -------------------------------------------------------------------------
@@ -593,7 +640,7 @@ function reject(o: something, f: something) { return partition(o, f)[1] }
 export { reject }
 
 // uniq ---------------------------------------------------------------------------
-export function uniq<V, Key>(list: Array<V>, to_key?: (v: V) => Key): Array<V> {
+export function unique<V, Key>(list: Array<V>, to_key?: (v: V) => Key): Array<V> {
   const set = new Set<something>()
   const _to_key = to_key || ((v: V) => v)
   return list.filter((v) => {
@@ -681,6 +728,12 @@ function values(o: something) {
 }
 export { values }
 
+
+// sum -----------------------------------------------------------------------------------
+export function sum(list: number[]): number {
+  return reduce(list, 0, (sum, v) => sum + v)
+}
+
 // map ----------------------------------------------------------------------------
 // function map<T, R>(list: T[], f: (v: T, i: number) => R): R[]
 // function map<M extends {}, K extends keyof M, R>(map: M, f: (v: M[K], k: K) => R): { [key in K]: R }
@@ -714,8 +767,13 @@ export { map }
 
 // round --------------------------------------------------------------------------
 export function round(v: number, digits: number = 0): number {
-  return digits == 0 ? Math.round(v) : Math.round(v * Math.pow(10, digits)) / Math.pow(10, digits)
+  return digits == 0 ?
+    Math.round(v) :
+    Math.round((v + Number.EPSILON) * Math.pow(10, digits)) / Math.pow(10, digits)
 }
+inline_test(() => {
+  assert.equal(round(0.05860103881518906, 2), 0.06)
+})
 
 
 // shuffle ------------------------------------------------------------------------

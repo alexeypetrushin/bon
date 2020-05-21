@@ -4,12 +4,27 @@ export { uniglobal };
 export declare const kb = 1024, mb: number;
 export declare const sec = 1000, min: number, hour: number, day: number;
 export declare const environment: 'development' | 'production' | 'test';
+export declare function pretty_print(v: something, colors?: boolean): any;
 export declare function p(...args: something): void;
 export interface InlineTest {
     (fn: () => void): void;
     run(): void;
 }
 export declare const inline_test: InlineTest;
+export interface TextDoc {
+    readonly tags?: string[];
+    readonly title: string;
+    readonly text: string;
+}
+export interface TodoDoc {
+    readonly priority?: 'low' | 'normal' | 'high';
+    readonly tags?: string[];
+    readonly todo: string;
+}
+export declare type Doc = TextDoc | TodoDoc;
+export declare const all_docs: Doc[];
+export declare function doc(...docs: Doc[]): void;
+export declare function as_code(code: string): string;
 interface HttpCallOptions {
     method?: 'post' | 'get';
     headers?: {
@@ -26,6 +41,7 @@ export interface Assert {
     (condition: boolean, message?: string | (() => string)): void;
     warn(condition: boolean, message?: string | (() => string)): void;
     equal(a: unknown, b: unknown, message?: string | (() => string)): void;
+    approx_equal(a: number, b: number, message?: string | (() => string), delta_relative?: number): void;
 }
 export declare const assert: Assert;
 export declare function deep_clone_and_sort(obj: something): something;
@@ -56,6 +72,7 @@ declare function take<T>(list: Array<T>, n: number): Array<T>;
 export { take };
 export declare function last<T>(list: Array<T>): T;
 export declare function last<T>(list: Array<T>, n: number): T[];
+export declare function reverse<T>(list: T[]): T[];
 declare function each<T>(list: T[], f: (v: T, i: number) => void): void;
 declare function each<K, V>(map: Map<K, V>, f: (v: V, k: K) => void): void;
 declare function each<M extends {}, K extends keyof M>(map: M, f: (v: M[K], k: K) => void): void;
@@ -66,6 +83,14 @@ declare function find<T>(map: {
     [key: string]: T;
 }, f: (v: T, k: string) => boolean): T | undefined;
 export { find };
+declare function group_by<V>(list: V[], f: (v: V, i: number) => number): Map<number, V[]>;
+declare function group_by<V>(list: V[], f: (v: V, i: number) => string): Map<string, V[]>;
+export { group_by };
+declare function entries<K, V>(map: Map<K, V>): [K, V][];
+declare function entries<V>(map: {
+    [key: string]: V;
+}): [string, V][];
+export { entries };
 declare function has<T>(list: T[], v: T): boolean;
 declare function has<T>(list: T[], f: (v: T, i: number) => boolean): boolean;
 declare function has<T>(map: {
@@ -83,20 +108,15 @@ export { sort };
 declare function sort_by<V>(list: V[], by: (v: V) => string): V[];
 declare function sort_by<V>(list: V[], by: (v: V) => number): V[];
 export { sort_by };
-export declare function map_with_rank<V, R>(list: V[], order_by: (v: V) => number, map: (v: V, rank: number) => R): R[];
-declare function select<T>(list: Array<T>, f: Predicate<T, number>): Array<T>;
-declare function select<T>(list: Array<T>, keys: number[]): Array<T>;
-declare function select<T>(map: {
-    [key: string]: T;
-}, f: Predicate<T, string>): {
-    [key: string]: T;
+declare function filter_map<V, S>(list: V[], f: (v: V, i: number) => S | false): S[];
+declare function filter_map<V, S>(map: Map<number, V>, f: (v: V, k: number) => S | false): Map<number, S>;
+declare function filter_map<V, S>(map: Map<string, V>, f: (v: V, k: string) => S | false): Map<string, S>;
+declare function filter_map<V, S>(map: {
+    [key: string]: V;
+}, f: (v: V, k: string) => S | false): {
+    [key: string]: S;
 };
-declare function select<T>(map: {
-    [key: string]: T;
-}, keys: string[]): {
-    [key: string]: T;
-};
-export { select };
+export { filter_map };
 declare function reject<T>(list: Array<T>, f: Predicate<T, number>): Array<T>;
 declare function reject<T>(list: Array<T>, keys: number[]): Array<T>;
 declare function reject<T>(map: {
@@ -110,7 +130,7 @@ declare function reject<T>(map: {
     [key: string]: T;
 };
 export { reject };
-export declare function uniq<V, Key>(list: Array<V>, to_key?: (v: V) => Key): Array<V>;
+export declare function unique<V, Key>(list: Array<V>, to_key?: (v: V) => Key): Array<V>;
 declare function reduce<A, V>(list: V[], accumulator: A, f: (accumulator: A, v: V, key: number) => A): A;
 declare function reduce<A, V, K>(map: Map<K, V>, accumulator: A, f: (accumulator: A, v: V, key: number) => A): A;
 declare function reduce<A, V>(map: {
@@ -128,6 +148,7 @@ declare function values<T>(map: {
     [key: string]: T;
 }): T[];
 export { values };
+export declare function sum(list: number[]): number;
 declare function map<V, R>(list: V[], f: (v: V, i: number) => R): R[];
 declare function map<K, V, R>(map: Map<K, V>, f: (v: V, k: K) => R): Map<K, R>;
 declare function map<M extends {}, K extends keyof M, R>(map: M, f: (v: M[K], k: K) => R): {

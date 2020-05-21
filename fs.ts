@@ -6,16 +6,15 @@ import { promisify } from 'util'
 import * as os from 'os'
 
 export type EntryType = 'directory' | 'file' | 'link'
+export type Entry = { type: EntryType, name: string }
 
 export function resolve(...paths: string[]): string { return require('path').resolve(...paths) }
 
-export async function read_directory(path: string, type?: EntryType): Promise<string[]> {
-  const list = (await promisify(nodefs.readdir)(path)).map((name: string) => resolve(path, name))
-  if (!type) return list
-
-  const filtered = []
-  for (const path of list) if ((await get_type(path)) == type) filtered.push(path)
-  return filtered
+export async function read_directory(path: string): Promise<Entry[]> {
+  const names = (await promisify(nodefs.readdir)(path))
+  const entries: Entry[] = []
+  for (const name of names) entries.push({ type: await get_type(resolve(path, name)), name })
+  return entries
 }
 
 function read_file(path: string): Promise<Buffer>
@@ -46,6 +45,21 @@ export async function write_file(
   await promisify(nodefs.writeFile)(path, data, options)
 }
 
+// Creates parent directory automatically
+export async function append_to_file(
+  path:     string,
+  data:     something,
+  options?: { encoding?: BufferEncoding, mode?: number }
+): Promise<void> {
+  // Creating parent directory for to if it's not exist.
+  // Could be speed up by handling exception instead of checking for existance.
+  const directory = nodepath.dirname(path)
+  if (!(await exists(directory))) await make_directory(directory)
+  options = { ...options }
+  options.encoding = options.encoding || 'utf8'
+  await promisify(nodefs.appendFile)(path, data, options)
+}
+
 export async function read_json<T = something>(path: string): Promise<T> {
   return JSON.parse(await read_file(path, { encoding: 'utf8' }))
 }
@@ -63,6 +77,31 @@ export async function rename(from: string, to: string, options?: { overwrite: bo
   if (!(await exists(to_parent_directory))) await make_directory(to_parent_directory)
 
   await promisify(nodefs.rename)(from, to)
+}
+
+// Creates parent directory automatically
+export async function copy_file(
+  from: string,
+  to:   something
+): Promise<void> {
+  // Creating parent directory for to if it's not exist.
+  // Could be speed up by handling exception instead of checking for existance.
+  const directory = nodepath.dirname(to)
+  if (!(await exists(directory))) await make_directory(directory)
+  await promisify(nodefs.copyFile)(from, to)
+}
+
+// Creates parent directory automatically
+export async function copy_directory(
+  from: string,
+  to:   something
+): Promise<void> {
+  const entries = await read_directory(from)
+  for (const { type, name } of entries) {
+    if      (type == 'file')      await copy_file(resolve(from, name), resolve(to, name))
+    else if (type == 'directory') await copy_directory(resolve(from, name), resolve(to, name))
+    else                          throw new Error(`unsupported entry type '${type}'`)
+  }
 }
 
 // Creates parent directory automatically

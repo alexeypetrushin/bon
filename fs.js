@@ -93,46 +93,45 @@ function resolve() {
     return (_a = require('path')).resolve.apply(_a, __spread(paths));
 }
 exports.resolve = resolve;
-function read_directory(path, type) {
+function read_directory(path) {
     return __awaiter(this, void 0, void 0, function () {
-        var list, filtered, list_1, list_1_1, path_1, e_1_1;
-        var e_1, _a;
-        return __generator(this, function (_b) {
-            switch (_b.label) {
+        var names, entries, names_1, names_1_1, name_1, _a, _b, _c, e_1_1;
+        var e_1, _d;
+        return __generator(this, function (_e) {
+            switch (_e.label) {
                 case 0: return [4 /*yield*/, util_1.promisify(nodefs.readdir)(path)];
                 case 1:
-                    list = (_b.sent()).map(function (name) { return resolve(path, name); });
-                    if (!type)
-                        return [2 /*return*/, list];
-                    filtered = [];
-                    _b.label = 2;
+                    names = (_e.sent());
+                    entries = [];
+                    _e.label = 2;
                 case 2:
-                    _b.trys.push([2, 7, 8, 9]);
-                    list_1 = __values(list), list_1_1 = list_1.next();
-                    _b.label = 3;
+                    _e.trys.push([2, 7, 8, 9]);
+                    names_1 = __values(names), names_1_1 = names_1.next();
+                    _e.label = 3;
                 case 3:
-                    if (!!list_1_1.done) return [3 /*break*/, 6];
-                    path_1 = list_1_1.value;
-                    return [4 /*yield*/, get_type(path_1)];
+                    if (!!names_1_1.done) return [3 /*break*/, 6];
+                    name_1 = names_1_1.value;
+                    _b = (_a = entries).push;
+                    _c = {};
+                    return [4 /*yield*/, get_type(resolve(path, name_1))];
                 case 4:
-                    if ((_b.sent()) == type)
-                        filtered.push(path_1);
-                    _b.label = 5;
+                    _b.apply(_a, [(_c.type = _e.sent(), _c.name = name_1, _c)]);
+                    _e.label = 5;
                 case 5:
-                    list_1_1 = list_1.next();
+                    names_1_1 = names_1.next();
                     return [3 /*break*/, 3];
                 case 6: return [3 /*break*/, 9];
                 case 7:
-                    e_1_1 = _b.sent();
+                    e_1_1 = _e.sent();
                     e_1 = { error: e_1_1 };
                     return [3 /*break*/, 9];
                 case 8:
                     try {
-                        if (list_1_1 && !list_1_1.done && (_a = list_1.return)) _a.call(list_1);
+                        if (names_1_1 && !names_1_1.done && (_d = names_1.return)) _d.call(names_1);
                     }
                     finally { if (e_1) throw e_1.error; }
                     return [7 /*endfinally*/];
-                case 9: return [2 /*return*/, filtered];
+                case 9: return [2 /*return*/, entries];
             }
         });
     });
@@ -184,6 +183,33 @@ function write_file(path, data, options) {
     });
 }
 exports.write_file = write_file;
+// Creates parent directory automatically
+function append_to_file(path, data, options) {
+    return __awaiter(this, void 0, void 0, function () {
+        var directory;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    directory = nodepath.dirname(path);
+                    return [4 /*yield*/, exists(directory)];
+                case 1:
+                    if (!!(_a.sent())) return [3 /*break*/, 3];
+                    return [4 /*yield*/, make_directory(directory)];
+                case 2:
+                    _a.sent();
+                    _a.label = 3;
+                case 3:
+                    options = __assign({}, options);
+                    options.encoding = options.encoding || 'utf8';
+                    return [4 /*yield*/, util_1.promisify(nodefs.appendFile)(path, data, options)];
+                case 4:
+                    _a.sent();
+                    return [2 /*return*/];
+            }
+        });
+    });
+}
+exports.append_to_file = append_to_file;
 function read_json(path) {
     return __awaiter(this, void 0, void 0, function () {
         var _a, _b;
@@ -239,6 +265,80 @@ function rename(from, to, options) {
 }
 exports.rename = rename;
 // Creates parent directory automatically
+function copy_file(from, to) {
+    return __awaiter(this, void 0, void 0, function () {
+        var directory;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    directory = nodepath.dirname(to);
+                    return [4 /*yield*/, exists(directory)];
+                case 1:
+                    if (!!(_a.sent())) return [3 /*break*/, 3];
+                    return [4 /*yield*/, make_directory(directory)];
+                case 2:
+                    _a.sent();
+                    _a.label = 3;
+                case 3: return [4 /*yield*/, util_1.promisify(nodefs.copyFile)(from, to)];
+                case 4:
+                    _a.sent();
+                    return [2 /*return*/];
+            }
+        });
+    });
+}
+exports.copy_file = copy_file;
+// Creates parent directory automatically
+function copy_directory(from, to) {
+    return __awaiter(this, void 0, void 0, function () {
+        var entries, entries_1, entries_1_1, _a, type, name_2, e_3_1;
+        var e_3, _b;
+        return __generator(this, function (_c) {
+            switch (_c.label) {
+                case 0: return [4 /*yield*/, read_directory(from)];
+                case 1:
+                    entries = _c.sent();
+                    _c.label = 2;
+                case 2:
+                    _c.trys.push([2, 10, 11, 12]);
+                    entries_1 = __values(entries), entries_1_1 = entries_1.next();
+                    _c.label = 3;
+                case 3:
+                    if (!!entries_1_1.done) return [3 /*break*/, 9];
+                    _a = entries_1_1.value, type = _a.type, name_2 = _a.name;
+                    if (!(type == 'file')) return [3 /*break*/, 5];
+                    return [4 /*yield*/, copy_file(resolve(from, name_2), resolve(to, name_2))];
+                case 4:
+                    _c.sent();
+                    return [3 /*break*/, 8];
+                case 5:
+                    if (!(type == 'directory')) return [3 /*break*/, 7];
+                    return [4 /*yield*/, copy_directory(resolve(from, name_2), resolve(to, name_2))];
+                case 6:
+                    _c.sent();
+                    return [3 /*break*/, 8];
+                case 7: throw new Error("unsupported entry type '" + type + "'");
+                case 8:
+                    entries_1_1 = entries_1.next();
+                    return [3 /*break*/, 3];
+                case 9: return [3 /*break*/, 12];
+                case 10:
+                    e_3_1 = _c.sent();
+                    e_3 = { error: e_3_1 };
+                    return [3 /*break*/, 12];
+                case 11:
+                    try {
+                        if (entries_1_1 && !entries_1_1.done && (_b = entries_1.return)) _b.call(entries_1);
+                    }
+                    finally { if (e_3) throw e_3.error; }
+                    return [7 /*endfinally*/];
+                case 12: return [2 /*return*/];
+            }
+        });
+    });
+}
+exports.copy_directory = copy_directory;
+// Creates parent directory automatically
 function make_directory(path) {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
@@ -259,7 +359,7 @@ function make_directory(path) {
 exports.make_directory = make_directory;
 function exists(path) {
     return __awaiter(this, void 0, void 0, function () {
-        var e_3;
+        var e_4;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -269,7 +369,7 @@ function exists(path) {
                     _a.sent();
                     return [2 /*return*/, true];
                 case 2:
-                    e_3 = _a.sent();
+                    e_4 = _a.sent();
                     return [2 /*return*/, false];
                 case 3: return [2 /*return*/];
             }
@@ -297,7 +397,7 @@ function delete_file(path) {
 exports.delete_file = delete_file;
 function delete_directory(path, options) {
     return __awaiter(this, void 0, void 0, function () {
-        var e_4;
+        var e_5;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0: return [4 /*yield*/, exists(path)];
@@ -313,10 +413,10 @@ function delete_directory(path, options) {
                     _a.sent();
                     return [3 /*break*/, 5];
                 case 4:
-                    e_4 = _a.sent();
+                    e_5 = _a.sent();
                     // Because node fs errors doesn't have stack trace information
                     // https://stackoverflow.com/questions/61155350/why-theres-no-stack-trace-in-node-fs-rmdir-error
-                    throw new Error("can't delete directory '" + path + "' because of '" + base_1.ensure_error(e_4).message + "'");
+                    throw new Error("can't delete directory '" + path + "' because of '" + base_1.ensure_error(e_5).message + "'");
                 case 5: return [2 /*return*/];
             }
         });
