@@ -19,6 +19,7 @@ const console = uniglobal.console
 // Useful constants ---------------------------------------------------------------
 export const kb = 1024, mb = 1024 * kb
 export const sec = 1000, min = 60 * sec, hour = 60 * min, day = 24 * hour
+export const million = 1000000, billion = 1000 * million
 
 // environment --------------------------------------------------------------------
 export const environment: 'development' | 'production' | 'test' =
@@ -53,19 +54,34 @@ const fetch = uniglobal.fetch || require('node-fetch')
 // inlineTest ---------------------------------------------------------------------
 export interface InlineTest {
   (fn: () => void): void
+  (name: string, fn: (() => void)): void
+  focus: {
+    (fn: () => void): void
+    (name: string, fn: (() => void)): void
+  }
   run(): void
 }
-
-const inline_tests: (() => void)[] = []
-export const inline_test = <InlineTest>function(fn) { inline_tests.push(fn) }
+const focused_inline_tests: [string | undefined, () => void][] = []
+const inline_tests: [string | undefined, () => void][] = []
+export const inline_test = <InlineTest>function(...args: something[]) {
+  const [name, fn] = args.length == 1 ? [undefined, args[0]] : args
+  inline_tests.push([name, fn])
+}
+inline_test.focus = function(...args: something[]) {
+  const [name, fn] = args.length == 1 ? [undefined, args[0]] : args
+  focused_inline_tests.push([name, fn])
+}
 inline_test.run = async () => {
-  try {
-    for(const test of inline_tests) await test()
-    log('info', 'inline tests passed')
-  } catch(e) {
-    log('error', e)
-    uniglobal.process && uniglobal.process.exit()
+  const tests = focused_inline_tests.length > 0 ? focused_inline_tests : inline_tests
+  for(const [name, test] of tests) {
+    try {
+      await test()
+    } catch(e) {
+      log('error', `inline test failed ${name ? ` '${name}'` : ''}`, e)
+      uniglobal.process && uniglobal.process.exit()
+    }
   }
+  log('info', 'inline tests passed')
 }
 
 const run_inline_tests = (uniglobal.process && uniglobal.process.env &&
@@ -86,7 +102,9 @@ export interface TodoDoc {
 }
 export type Doc = TextDoc | TodoDoc
 export const all_docs: Doc[] = []
-export function doc(...docs: Doc[]) { all_docs.push(...docs) }
+export function doc(...docs: (Doc | (() => Doc))[]) {
+  all_docs.push(...(docs.map((d) => typeof d === 'function' ? d() : d)))
+}
 export function as_code(code: string) { return "\`\`\`\n" + code + "\n\`\`\`" }
 
 // http_call ----------------------------------------------------------------------
@@ -140,6 +158,12 @@ export async function sleep(ms: number): Promise<void> {
 }
 
 
+// is_number -----------------------------------------------------------------------------
+export function is_number(n: number | undefined | null): n is number {
+  // isNumber is broken, it returns true for NaN
+  return typeof n == 'number' ? Number.isFinite(n) : false
+}
+
 // assert -------------------------------------------------------------------------
 export interface Assert {
   (condition: boolean, message?: string | (() => string)): void
@@ -185,7 +209,7 @@ export function deep_clone_and_sort(obj: something): something {
 
 // stable_json_stringify ----------------------------------------------------------
 // https://stackoverflow.com/questions/42491226/is-json-stringify-deterministic-in-v8
-export function stable_json_stringify(obj: unknown, pretty = false): string {
+export function stable_json_stringify(obj: unknown, pretty = true): string {
   return pretty ? JSON.stringify(deep_clone_and_sort(obj), null, 2) : JSON.stringify(deep_clone_and_sort(obj))
 }
 
@@ -472,6 +496,20 @@ export function last<T>(list: Array<T>, n?: number) {
 }
 
 
+// last ---------------------------------------------------------------------------
+export function first<T>(list: Array<T>): T
+export function first<T>(list: Array<T>, n: number): T[]
+export function first<T>(list: Array<T>, n?: number) {
+  if (n === undefined) {
+    if (list.length < 1) throw new Error(`can't get first elements from empty list`)
+    return list[0]
+  } else {
+    if (list.length < n) throw new Error(`can't get first ${n} elements from list of length ${list.length}`)
+    else return list.slice(0, n)
+  }
+}
+
+
 // reverse -------------------------------------------------------------------------------
 export function reverse<T>(list: T[]): T[] {
   list = [...list]
@@ -503,6 +541,29 @@ function find<T>(o: T[] | { [key: string]: T }, finder: T | ((v: T, i: something
   return undefined
 }
 export { find }
+
+
+// find_index ----------------------------------------------------------------------------
+function find_index<T>(list: T[], v: T): number | undefined
+function find_index<T>(list: T[], f: (v: T, i: number) => boolean): number | undefined
+function find_index<T>(list: T[], finder: T | ((v: T, i: something) => boolean)): number | undefined {
+  const predicate = finder instanceof Function ? finder : (v: T) => v == finder
+  for(let i = 0; i < list.length; i++) if (predicate(list[i], i)) return i
+  return undefined
+}
+export { find_index }
+
+
+// find_last_index -----------------------------------------------------------------------
+function find_last_index<T>(list: T[], v: T): number | undefined
+function find_last_index<T>(list: T[], f: (v: T, i: number) => boolean): number | undefined
+function find_last_index<T>(list: T[], finder: T | ((v: T, i: something) => boolean)): number | undefined {
+  const predicate = finder instanceof Function ? finder : (v: T) => v == finder
+  for(let i = list.length - 1; i >= 0; i--) if (predicate(list[i], i)) return i
+  return undefined
+}
+
+export { find_last_index }
 
 
 // group_by ------------------------------------------------------------------------------
@@ -617,18 +678,44 @@ function filter_map<V, S>(map: Map<string, V>, f: (v: V, k: string) => S | false
 function filter_map<V, S>(map: { [key: string]: V }, f: (v: V, k: string) => S | false): { [key: string]: S }
 function filter_map(o: something, f: something): something {
   if (o instanceof Array) {
-    return o.filter((v, i) => f(v, i) !== false)
+    const filtered: something[] = []
+    each(o, (v, k) => {
+      const r = f(v, k)
+      if (r !== false) filtered.push(r)
+    })
+    return filtered
   } else if (o instanceof Map) {
     const filtered = new Map<something, something>()
-    each(o, (v, k) => { if (f(v, k) !== false) filtered.set(k, v) })
+    each(o, (v, k) => {
+      const r = f(v, k)
+      if (r !== false) filtered.set(k, r)
+    })
     return filtered
   } else {
     const filtered: something = {}
-    each(o, (v, k) => { if (f(v, k) !== false) filtered[k] = v })
+    each(o, (v, k) => {
+      const r = f(v, k)
+      if (r !== false) filtered[k] = r
+    })
     return filtered
   }
 }
 export { filter_map }
+
+
+// fill ---------------------------------------------------------------------------------
+export function fill<V>(size: number, v: V | ((i: number) => V)): V[] {
+  const f: ((i: number) => V) = typeof v == 'function' ? v as ((i: number) => V) : () => v
+  const list: V[] = []
+  for (let i = 0; i < size; i++) list.push(f(i))
+  return list
+}
+
+
+// fill ---------------------------------------------------------------------------------
+export function skip_undefined<V>(list: (V | undefined)[]): V[] {
+  return filter_map(list, (v) => v !== undefined ? v : false)
+}
 
 
 // reject -------------------------------------------------------------------------

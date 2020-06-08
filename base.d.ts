@@ -3,11 +3,17 @@ declare let uniglobal: something;
 export { uniglobal };
 export declare const kb = 1024, mb: number;
 export declare const sec = 1000, min: number, hour: number, day: number;
+export declare const million = 1000000, billion: number;
 export declare const environment: 'development' | 'production' | 'test';
 export declare function pretty_print(v: something, colors?: boolean): any;
 export declare function p(...args: something): void;
 export interface InlineTest {
     (fn: () => void): void;
+    (name: string, fn: (() => void)): void;
+    focus: {
+        (fn: () => void): void;
+        (name: string, fn: (() => void)): void;
+    };
     run(): void;
 }
 export declare const inline_test: InlineTest;
@@ -23,7 +29,7 @@ export interface TodoDoc {
 }
 export declare type Doc = TextDoc | TodoDoc;
 export declare const all_docs: Doc[];
-export declare function doc(...docs: Doc[]): void;
+export declare function doc(...docs: (Doc | (() => Doc))[]): void;
 export declare function as_code(code: string): string;
 interface HttpCallOptions {
     method?: 'post' | 'get';
@@ -37,6 +43,7 @@ export declare function build_url(url: string, query?: {
     [key: string]: string | number | undefined | null;
 }): string;
 export declare function sleep(ms: number): Promise<void>;
+export declare function is_number(n: number | undefined | null): n is number;
 export interface Assert {
     (condition: boolean, message?: string | (() => string)): void;
     warn(condition: boolean, message?: string | (() => string)): void;
@@ -72,6 +79,8 @@ declare function take<T>(list: Array<T>, n: number): Array<T>;
 export { take };
 export declare function last<T>(list: Array<T>): T;
 export declare function last<T>(list: Array<T>, n: number): T[];
+export declare function first<T>(list: Array<T>): T;
+export declare function first<T>(list: Array<T>, n: number): T[];
 export declare function reverse<T>(list: T[]): T[];
 declare function each<T>(list: T[], f: (v: T, i: number) => void): void;
 declare function each<K, V>(map: Map<K, V>, f: (v: V, k: K) => void): void;
@@ -83,6 +92,12 @@ declare function find<T>(map: {
     [key: string]: T;
 }, f: (v: T, k: string) => boolean): T | undefined;
 export { find };
+declare function find_index<T>(list: T[], v: T): number | undefined;
+declare function find_index<T>(list: T[], f: (v: T, i: number) => boolean): number | undefined;
+export { find_index };
+declare function find_last_index<T>(list: T[], v: T): number | undefined;
+declare function find_last_index<T>(list: T[], f: (v: T, i: number) => boolean): number | undefined;
+export { find_last_index };
 declare function group_by<V>(list: V[], f: (v: V, i: number) => number): Map<number, V[]>;
 declare function group_by<V>(list: V[], f: (v: V, i: number) => string): Map<string, V[]>;
 export { group_by };
@@ -117,6 +132,8 @@ declare function filter_map<V, S>(map: {
     [key: string]: S;
 };
 export { filter_map };
+export declare function fill<V>(size: number, v: V | ((i: number) => V)): V[];
+export declare function skip_undefined<V>(list: (V | undefined)[]): V[];
 declare function reject<T>(list: Array<T>, f: Predicate<T, number>): Array<T>;
 declare function reject<T>(list: Array<T>, keys: number[]): Array<T>;
 declare function reject<T>(map: {

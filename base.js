@@ -106,6 +106,7 @@ var console = uniglobal.console;
 // Useful constants ---------------------------------------------------------------
 exports.kb = 1024, exports.mb = 1024 * exports.kb;
 exports.sec = 1000, exports.min = 60 * exports.sec, exports.hour = 60 * exports.min, exports.day = 24 * exports.hour;
+exports.million = 1000000, exports.billion = 1000 * exports.million;
 // environment --------------------------------------------------------------------
 exports.environment = (uniglobal.process && uniglobal.process.env && uniglobal.process.env.environment) ||
     (uniglobal.mono && uniglobal.mono.environment) ||
@@ -142,50 +143,68 @@ function p() {
 }
 exports.p = p;
 var fetch = uniglobal.fetch || require('node-fetch');
+var focused_inline_tests = [];
 var inline_tests = [];
-exports.inline_test = function (fn) { inline_tests.push(fn); };
+exports.inline_test = function () {
+    var args = [];
+    for (var _i = 0; _i < arguments.length; _i++) {
+        args[_i] = arguments[_i];
+    }
+    var _a = __read(args.length == 1 ? [undefined, args[0]] : args, 2), name = _a[0], fn = _a[1];
+    inline_tests.push([name, fn]);
+};
+exports.inline_test.focus = function () {
+    var args = [];
+    for (var _i = 0; _i < arguments.length; _i++) {
+        args[_i] = arguments[_i];
+    }
+    var _a = __read(args.length == 1 ? [undefined, args[0]] : args, 2), name = _a[0], fn = _a[1];
+    focused_inline_tests.push([name, fn]);
+};
 exports.inline_test.run = function () { return __awaiter(void 0, void 0, void 0, function () {
-    var inline_tests_1, inline_tests_1_1, test_1, e_1_1, e_2;
-    var e_1, _a;
-    return __generator(this, function (_b) {
-        switch (_b.label) {
+    var tests, tests_1, tests_1_1, _a, name_1, test_1, e_1, e_2_1;
+    var e_2, _b;
+    return __generator(this, function (_c) {
+        switch (_c.label) {
             case 0:
-                _b.trys.push([0, 9, , 10]);
-                _b.label = 1;
+                tests = focused_inline_tests.length > 0 ? focused_inline_tests : inline_tests;
+                _c.label = 1;
             case 1:
-                _b.trys.push([1, 6, 7, 8]);
-                inline_tests_1 = __values(inline_tests), inline_tests_1_1 = inline_tests_1.next();
-                _b.label = 2;
+                _c.trys.push([1, 8, 9, 10]);
+                tests_1 = __values(tests), tests_1_1 = tests_1.next();
+                _c.label = 2;
             case 2:
-                if (!!inline_tests_1_1.done) return [3 /*break*/, 5];
-                test_1 = inline_tests_1_1.value;
-                return [4 /*yield*/, test_1()];
+                if (!!tests_1_1.done) return [3 /*break*/, 7];
+                _a = __read(tests_1_1.value, 2), name_1 = _a[0], test_1 = _a[1];
+                _c.label = 3;
             case 3:
-                _b.sent();
-                _b.label = 4;
+                _c.trys.push([3, 5, , 6]);
+                return [4 /*yield*/, test_1()];
             case 4:
-                inline_tests_1_1 = inline_tests_1.next();
-                return [3 /*break*/, 2];
-            case 5: return [3 /*break*/, 8];
+                _c.sent();
+                return [3 /*break*/, 6];
+            case 5:
+                e_1 = _c.sent();
+                log('error', "inline test failed " + (name_1 ? " '" + name_1 + "'" : ''), e_1);
+                uniglobal.process && uniglobal.process.exit();
+                return [3 /*break*/, 6];
             case 6:
-                e_1_1 = _b.sent();
-                e_1 = { error: e_1_1 };
-                return [3 /*break*/, 8];
-            case 7:
-                try {
-                    if (inline_tests_1_1 && !inline_tests_1_1.done && (_a = inline_tests_1.return)) _a.call(inline_tests_1);
-                }
-                finally { if (e_1) throw e_1.error; }
-                return [7 /*endfinally*/];
+                tests_1_1 = tests_1.next();
+                return [3 /*break*/, 2];
+            case 7: return [3 /*break*/, 10];
             case 8:
-                log('info', 'inline tests passed');
+                e_2_1 = _c.sent();
+                e_2 = { error: e_2_1 };
                 return [3 /*break*/, 10];
             case 9:
-                e_2 = _b.sent();
-                log('error', e_2);
-                uniglobal.process && uniglobal.process.exit();
-                return [3 /*break*/, 10];
-            case 10: return [2 /*return*/];
+                try {
+                    if (tests_1_1 && !tests_1_1.done && (_b = tests_1.return)) _b.call(tests_1);
+                }
+                finally { if (e_2) throw e_2.error; }
+                return [7 /*endfinally*/];
+            case 10:
+                log('info', 'inline tests passed');
+                return [2 /*return*/];
         }
     });
 }); };
@@ -199,7 +218,7 @@ function doc() {
     for (var _i = 0; _i < arguments.length; _i++) {
         docs[_i] = arguments[_i];
     }
-    exports.all_docs.push.apply(exports.all_docs, __spread(docs));
+    exports.all_docs.push.apply(exports.all_docs, __spread((docs.map(function (d) { return typeof d === 'function' ? d() : d; }))));
 }
 exports.doc = doc;
 function as_code(code) { return "\`\`\`\n" + code + "\n\`\`\`"; }
@@ -269,6 +288,12 @@ function sleep(ms) {
     });
 }
 exports.sleep = sleep;
+// is_number -----------------------------------------------------------------------------
+function is_number(n) {
+    // isNumber is broken, it returns true for NaN
+    return typeof n == 'number' ? Number.isFinite(n) : false;
+}
+exports.is_number = is_number;
 exports.assert = function (condition, message) {
     var message_string = message ? (message instanceof Function ? message() : message) : 'Assertion error!';
     if (!condition)
@@ -319,7 +344,7 @@ exports.deep_clone_and_sort = deep_clone_and_sort;
 // stable_json_stringify ----------------------------------------------------------
 // https://stackoverflow.com/questions/42491226/is-json-stringify-deterministic-in-v8
 function stable_json_stringify(obj, pretty) {
-    if (pretty === void 0) { pretty = false; }
+    if (pretty === void 0) { pretty = true; }
     return pretty ? JSON.stringify(deep_clone_and_sort(obj), null, 2) : JSON.stringify(deep_clone_and_sort(obj));
 }
 exports.stable_json_stringify = stable_json_stringify;
@@ -559,6 +584,20 @@ function last(list, n) {
     }
 }
 exports.last = last;
+function first(list, n) {
+    if (n === undefined) {
+        if (list.length < 1)
+            throw new Error("can't get first elements from empty list");
+        return list[0];
+    }
+    else {
+        if (list.length < n)
+            throw new Error("can't get first " + n + " elements from list of length " + list.length);
+        else
+            return list.slice(0, n);
+    }
+}
+exports.first = first;
 // reverse -------------------------------------------------------------------------------
 function reverse(list) {
     list = __spread(list);
@@ -605,6 +644,22 @@ function find(o, finder) {
     return undefined;
 }
 exports.find = find;
+function find_index(list, finder) {
+    var predicate = finder instanceof Function ? finder : function (v) { return v == finder; };
+    for (var i = 0; i < list.length; i++)
+        if (predicate(list[i], i))
+            return i;
+    return undefined;
+}
+exports.find_index = find_index;
+function find_last_index(list, finder) {
+    var predicate = finder instanceof Function ? finder : function (v) { return v == finder; };
+    for (var i = list.length - 1; i >= 0; i--)
+        if (predicate(list[i], i))
+            return i;
+    return undefined;
+}
+exports.find_last_index = find_last_index;
 function group_by(list, f) {
     return reduce(list, new Map(), function (acc, v, i) {
         var key = f(v, i);
@@ -681,22 +736,48 @@ function sort_by(list, by) {
 exports.sort_by = sort_by;
 function filter_map(o, f) {
     if (o instanceof Array) {
-        return o.filter(function (v, i) { return f(v, i) !== false; });
-    }
-    else if (o instanceof Map) {
-        var filtered_1 = new Map();
-        each(o, function (v, k) { if (f(v, k) !== false)
-            filtered_1.set(k, v); });
+        var filtered_1 = [];
+        each(o, function (v, k) {
+            var r = f(v, k);
+            if (r !== false)
+                filtered_1.push(r);
+        });
         return filtered_1;
     }
-    else {
-        var filtered_2 = {};
-        each(o, function (v, k) { if (f(v, k) !== false)
-            filtered_2[k] = v; });
+    else if (o instanceof Map) {
+        var filtered_2 = new Map();
+        each(o, function (v, k) {
+            var r = f(v, k);
+            if (r !== false)
+                filtered_2.set(k, r);
+        });
         return filtered_2;
+    }
+    else {
+        var filtered_3 = {};
+        each(o, function (v, k) {
+            var r = f(v, k);
+            if (r !== false)
+                filtered_3[k] = r;
+        });
+        return filtered_3;
     }
 }
 exports.filter_map = filter_map;
+// fill ---------------------------------------------------------------------------------
+function fill(size, v) {
+    var f = typeof v == 'function' ? v : function () { return v; };
+    var list = [];
+    for (var i = 0; i < size; i++)
+        list.push(f(i));
+    return list;
+}
+exports.fill = fill;
+// fill ---------------------------------------------------------------------------------
+function skip_undefined(list) {
+    return filter_map(list, function (v) { return v !== undefined ? v : false; });
+}
+exports.skip_undefined = skip_undefined;
 function reject(o, f) { return partition(o, f)[1]; }
 exports.reject = reject;
 // uniq ---------------------------------------------------------------------------

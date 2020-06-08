@@ -1,0 +1,17 @@
+export declare function parse_yyyy_mm_dd(yyyy_mm_dd: string): [number, number, number];
+declare function to_yyyy_mm_dd(timestamp: number): string;
+declare function to_yyyy_mm_dd(y: number, m: number, d: number): string;
+export { to_yyyy_mm_dd };
+export declare function yyyy_mm_to_y_m(yyyy_mm: string): [number, number];
+export declare function yyyy_mm_dd_to_y_m_d(yyyy_mm_dd: string): [number, number, number];
+export declare function yyyy_mm_to_m(yyyy_mm: string, base_year: number): number;
+export declare function m_to_yyyy_mm(m: number, base_year: number): string;
+export declare function yyyy_mm_to_ms(yyyy_mm: string): number;
+export declare function yyyy_mm_dd_to_ms(yyyy_mm_dd: string): number;
+export declare function assert_yyyy_mm(yyyy_mm: string): void;
+export declare function assert_yyyy_mm_dd(yyyy_mm_dd: string): void;
+declare function to_yyyy_mm(timestamp: number): string;
+declare function to_yyyy_mm(y: number, m: number): string;
+export { to_yyyy_mm };
+export declare function current_yyyy_mm(): string;
+export declare function current_yyyy_mm_dd(): string;
