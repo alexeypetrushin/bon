@@ -1,3 +1,5 @@
+export * from './map'
+
 // Safe any -----------------------------------------------------------------------
 export type something = any
 
@@ -51,8 +53,8 @@ export function p(...args: something): void {
 const fetch = uniglobal.fetch || require('node-fetch')
 // util.inspect
 
-// inlineTest ---------------------------------------------------------------------
-export interface InlineTest {
+// Test ---------------------------------------------------------------------
+export interface TestApi {
   (fn: () => void): void
   (name: string, fn: (() => void)): void
   focus: {
@@ -61,32 +63,32 @@ export interface InlineTest {
   }
   run(): void
 }
-const focused_inline_tests: [string | undefined, () => void][] = []
-const inline_tests: [string | undefined, () => void][] = []
-export const inline_test = <InlineTest>function(...args: something[]) {
+const focused_tests: [string | undefined, () => void][] = []
+const tests: [string | undefined, () => void][] = []
+export const test = <TestApi>function(...args: something[]) {
   const [name, fn] = args.length == 1 ? [undefined, args[0]] : args
-  inline_tests.push([name, fn])
+  tests.push([name, fn])
 }
-inline_test.focus = function(...args: something[]) {
+test.focus = function(...args: something[]) {
   const [name, fn] = args.length == 1 ? [undefined, args[0]] : args
-  focused_inline_tests.push([name, fn])
+  focused_tests.push([name, fn])
 }
-inline_test.run = async () => {
-  const tests = focused_inline_tests.length > 0 ? focused_inline_tests : inline_tests
-  for(const [name, test] of tests) {
+test.run = async () => {
+  const list = focused_tests.length > 0 ? focused_tests : tests
+  for(const [name, test] of list) {
     try {
       await test()
     } catch(e) {
-      log('error', `inline test failed ${name ? ` '${name}'` : ''}`, e)
+      log('error', `test failed ${name ? ` '${name}'` : ''}`, e)
       uniglobal.process && uniglobal.process.exit()
     }
   }
-  log('info', 'inline tests passed')
+  log('info', 'tests passed')
 }
 
-const run_inline_tests = (uniglobal.process && uniglobal.process.env &&
-  uniglobal.process.env.inline_test) == 'true'
-if (run_inline_tests) uniglobal.setTimeout(inline_test.run, 0)
+const run_tests = (uniglobal.process && uniglobal.process.env &&
+  uniglobal.process.env.test) == 'true'
+if (run_tests) uniglobal.setTimeout(test.run, 0)
 
 
 // documentation -------------------------------------------------------------------------
@@ -228,7 +230,7 @@ export function deep_map(obj: something, map: (o: something) => something): some
         .map(([k, v]) => ({ [k]: deep_map(v, map) })
     ))
 }
-inline_test(() => {
+test(() => {
   class Wrapper<T> {
     constructor(readonly v: T) {}
     toJSON() { return this.v }
@@ -530,7 +532,7 @@ function each<T>(o: T[] | { [key: string]: T }, f: (v: T, i: something) => void)
 export { each }
 
 
-// find ---------------------------------------------------------------------------
+// find ----------------------------------------------------------------------------------
 function find<T>(list: T[], v: T): T | undefined
 function find<T>(list: T[], f: (v: T, i: number) => boolean): T | undefined
 function find<T>(map: { [key: string]: T }, f: (v: T, k: string) => boolean): T | undefined
@@ -541,6 +543,23 @@ function find<T>(o: T[] | { [key: string]: T }, finder: T | ((v: T, i: something
   return undefined
 }
 export { find }
+
+
+// ensure_find ---------------------------------------------------------------------------
+function ensure_find<T>(list: T[], v: T, on_error?: string | (() => string)): T
+function ensure_find<T>(list: T[], f: (v: T, i: number) => boolean, on_error?: string | (() => string)): T
+function ensure_find<T>(
+  map: { [key: string]: T }, f: (v: T, k: string) => boolean, on_error?: string | (() => string)
+): T
+function ensure_find<T>(
+  o: something, finder: T | ((v: T, i: something) => boolean), on_error?: string | (() => string)
+): T {
+  const found = find(o, finder) as T
+  if (found === undefined)
+    throw new Error(on_error ? (typeof on_error == 'function' ? on_error() : on_error) : `element not found!`)
+  return found
+}
+export { ensure_find }
 
 
 // find_index ----------------------------------------------------------------------------
@@ -740,13 +759,14 @@ export function unique<V, Key>(list: Array<V>, to_key?: (v: V) => Key): Array<V>
   })
 }
 
-// // pick ---------------------------------------------------------------------------
-// function pick<T>(list: Array<T>, keys: number[]): Array<T>
-// function pick<T extends {}, K extends keyof T>(map: T, k: K[]): Pick<T, K>
-// function pick(o: something, keys: (string | number)[]) {
-//   return partition(o, (i: something) => keys.includes(i))[0]
-// }
-// export { pick }
+
+// pick ---------------------------------------------------------------------------
+function pick<T>(list: T[], keys: number[]): T[]
+function pick<T extends {}, K extends keyof T>(map: T, k: K[]): Pick<T, K>
+function pick(o: something, keys: (string | number)[]) {
+  return partition(o, (i: something) => keys.includes(i))[0]
+}
+export { pick }
 
 
 // remove -------------------------------------------------------------------------
@@ -807,13 +827,19 @@ function keys<T>(o: something) {
 export { keys }
 
 
-// values -------------------------------------------------------------------------
-function values<T>(list: Array<T>): T[]
+// values --------------------------------------------------------------------------------
+function values<T>(list: T[]): T[]
 function values<T>(map: { [key: string]: T }): T[]
 function values(o: something) {
   return reduce(o, [], (list: something, v) => { list.push(v); return list })
 }
 export { values }
+
+
+// flatten -------------------------------------------------------------------------------
+export function flatten<T>(list: T[][]): T[] {
+  return reduce(list, [] as T[], (acc, v) => { acc.push(...v); return acc })
+}
 
 
 // sum -----------------------------------------------------------------------------------
@@ -858,7 +884,7 @@ export function round(v: number, digits: number = 0): number {
     Math.round(v) :
     Math.round((v + Number.EPSILON) * Math.pow(10, digits)) / Math.pow(10, digits)
 }
-inline_test(() => {
+test(() => {
   assert.equal(round(0.05860103881518906, 2), 0.06)
 })
 
@@ -938,10 +964,10 @@ export function ensure_error(error: something, default_message = "Unknown error"
 
 
 // Test ---------------------------------------------------------------------------
-export async function test(title: string, fn: () => Promise<void> | void): Promise<void> {
-  try       { await fn() }
-  catch (e) {
-    log('error', title)
-    throw e
-  }
-}
+// export async function test(title: string, fn: () => Promise<void> | void): Promise<void> {
+//   try       { await fn() }
+//   catch (e) {
+//     log('error', title)
+//     throw e
+//   }
+// }

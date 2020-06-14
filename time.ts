@@ -1,4 +1,4 @@
-import { something } from './base'
+import { something, take, entries } from './base'
 
 
 export function parse_yyyy_mm_dd(yyyy_mm_dd: string): [number, number, number] {
@@ -99,4 +99,39 @@ export function current_yyyy_mm(): string {
 export function current_yyyy_mm_dd(): string {
   const now = new Date(Date.now())
   return to_yyyy_mm_dd(now.getUTCFullYear(), now.getUTCMonth() + 1, now.getUTCDate())
+}
+
+// parse_month ---------------------------------------------------------------------------
+const month_names = [
+  'january',
+  'february',
+
+  'march',
+  'april',
+  'may',
+
+  'june',
+  'july',
+  'august',
+
+  'september',
+  'october',
+  'november',
+
+  'december'
+]
+const short_month_names = month_names.map((name) => take(name, 3))
+
+const month_names_map = new Map<string, number>()
+const short_month_names_map = new Map<string, number>()
+for (let i = 0; i < month_names.length; i++) {
+  month_names_map.set(month_names[i], i + 1)
+  short_month_names_map.set(short_month_names[i], i + 1)
+}
+
+export function parse_month(month: string): number {
+  const month_l = month.toLowerCase()
+  const n = month_names_map.get(month_l) || short_month_names_map.get(month_l)
+  if (n === undefined) throw new Error(`invalid month name '${month}'`)
+  return n
 }

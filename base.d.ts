@@ -1,3 +1,4 @@
+export * from './map';
 export declare type something = any;
 declare let uniglobal: something;
 export { uniglobal };
@@ -7,7 +8,7 @@ export declare const million = 1000000, billion: number;
 export declare const environment: 'development' | 'production' | 'test';
 export declare function pretty_print(v: something, colors?: boolean): any;
 export declare function p(...args: something): void;
-export interface InlineTest {
+export interface TestApi {
     (fn: () => void): void;
     (name: string, fn: (() => void)): void;
     focus: {
@@ -16,7 +17,7 @@ export interface InlineTest {
     };
     run(): void;
 }
-export declare const inline_test: InlineTest;
+export declare const test: TestApi;
 export interface TextDoc {
     readonly tags?: string[];
     readonly title: string;
@@ -92,6 +93,12 @@ declare function find<T>(map: {
     [key: string]: T;
 }, f: (v: T, k: string) => boolean): T | undefined;
 export { find };
+declare function ensure_find<T>(list: T[], v: T, on_error?: string | (() => string)): T;
+declare function ensure_find<T>(list: T[], f: (v: T, i: number) => boolean, on_error?: string | (() => string)): T;
+declare function ensure_find<T>(map: {
+    [key: string]: T;
+}, f: (v: T, k: string) => boolean, on_error?: string | (() => string)): T;
+export { ensure_find };
 declare function find_index<T>(list: T[], v: T): number | undefined;
 declare function find_index<T>(list: T[], f: (v: T, i: number) => boolean): number | undefined;
 export { find_index };
@@ -148,6 +155,9 @@ declare function reject<T>(map: {
 };
 export { reject };
 export declare function unique<V, Key>(list: Array<V>, to_key?: (v: V) => Key): Array<V>;
+declare function pick<T>(list: T[], keys: number[]): T[];
+declare function pick<T extends {}, K extends keyof T>(map: T, k: K[]): Pick<T, K>;
+export { pick };
 declare function reduce<A, V>(list: V[], accumulator: A, f: (accumulator: A, v: V, key: number) => A): A;
 declare function reduce<A, V, K>(map: Map<K, V>, accumulator: A, f: (accumulator: A, v: V, key: number) => A): A;
 declare function reduce<A, V>(map: {
@@ -160,11 +170,12 @@ declare function keys<T, O extends {
     [key: string]: T;
 }>(map: O): (keyof O & string)[];
 export { keys };
-declare function values<T>(list: Array<T>): T[];
+declare function values<T>(list: T[]): T[];
 declare function values<T>(map: {
     [key: string]: T;
 }): T[];
 export { values };
+export declare function flatten<T>(list: T[][]): T[];
 export declare function sum(list: number[]): number;
 declare function map<V, R>(list: V[], f: (v: V, i: number) => R): R[];
 declare function map<K, V, R>(map: Map<K, V>, f: (v: V, k: K) => R): Map<K, R>;
@@ -184,4 +195,3 @@ export declare class NeverError extends Error {
     constructor(message: never);
 }
 export declare function ensure_error(error: something, default_message?: string): Error;
-export declare function test(title: string, fn: () => Promise<void> | void): Promise<void>;

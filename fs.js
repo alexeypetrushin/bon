@@ -84,6 +84,7 @@ var nodepath = require("path");
 var fsextra = require("fs-extra");
 var util_1 = require("util");
 var os = require("os");
+// resolve -------------------------------------------------------------------------------
 function resolve() {
     var _a;
     var paths = [];
@@ -93,6 +94,7 @@ function resolve() {
     return (_a = require('path')).resolve.apply(_a, __spread(paths));
 }
 exports.resolve = resolve;
+// read_directory ------------------------------------------------------------------------
 function read_directory(path) {
     return __awaiter(this, void 0, void 0, function () {
         var names, entries, names_1, names_1_1, name_1, _a, _b, _c, e_1_1;
@@ -156,6 +158,17 @@ function read_file(path, options) {
     });
 }
 exports.read_file = read_file;
+function read_file_sync(path, options) {
+    try {
+        return nodefs.readFileSync(path, options);
+    }
+    catch (e) {
+        // Because node.js error doesn't have stack trace
+        throw new Error("can't read file '" + path + "' because of '" + base_1.ensure_error(e).message + "'");
+    }
+}
+exports.read_file_sync = read_file_sync;
+// write_file ----------------------------------------------------------------------------
 // Creates parent directory automatically
 function write_file(path, data, options) {
     return __awaiter(this, void 0, void 0, function () {
@@ -183,6 +196,32 @@ function write_file(path, data, options) {
     });
 }
 exports.write_file = write_file;
+function write_file_sync(path, data, options) {
+    return __awaiter(this, void 0, void 0, function () {
+        var directory;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    directory = nodepath.dirname(path);
+                    return [4 /*yield*/, exists(directory)];
+                case 1:
+                    if (!!(_a.sent())) return [3 /*break*/, 3];
+                    return [4 /*yield*/, make_directory(directory)];
+                case 2:
+                    _a.sent();
+                    _a.label = 3;
+                case 3:
+                    options = __assign({}, options);
+                    options.encoding = options.encoding || 'utf8';
+                    return [4 /*yield*/, util_1.promisify(nodefs.writeFile)(path, data, options)];
+                case 4:
+                    _a.sent();
+                    return [2 /*return*/];
+            }
+        });
+    });
+}
+exports.write_file_sync = write_file_sync;
 // Creates parent directory automatically
 function append_to_file(path, data, options) {
     return __awaiter(this, void 0, void 0, function () {
@@ -377,6 +416,16 @@ function exists(path) {
     });
 }
 exports.exists = exists;
+function exists_sync(path) {
+    try {
+        nodefs.statSync(path);
+        return true;
+    }
+    catch (e) {
+        return false;
+    }
+}
+exports.exists_sync = exists_sync;
 function delete_file(path) {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {

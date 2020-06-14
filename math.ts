@@ -1,4 +1,4 @@
-import { assert, inline_test, sort_by, round, fill, filter_map, find_index, p } from './base'
+import { assert, test, sort_by, round, fill, filter_map, find_index, p } from './base'
 
 
 // median --------------------------------------------------------------------------------
@@ -61,7 +61,7 @@ export function map_with_rank<V, R>(list: V[], order_by: (v: V) => number, map: 
   const original_with_rank = sort_by(sorted_with_rank, ({ original_i }) => original_i)
   return original_with_rank.map(({ v, rank }) => map(v, rank))
 }
-inline_test(() => {
+test(() => {
   assert.equal(
     map_with_rank(
       [ 4,        2,        3,        4,        5,        7,        5], (v) => v, (v, r) => [v, r]
@@ -142,7 +142,7 @@ export function differentiate(sparce_values: (number | undefined)[]): (number | 
   assert(diffs[0] === undefined, `first element of diff serie should always be undefined`)
   return diffs
 }
-inline_test(() => {
+test(() => {
   const u = undefined
   assert.equal(differentiate([
     u,   1,   u,   u,   8,   u,   u,   1, u
@@ -194,7 +194,7 @@ export function integrate(diffs: (number | undefined)[], base = 1): (number | un
   }
   return values
 }
-inline_test(() => {
+test(() => {
   const u = undefined
   assert.equal(integrate([
     u,   u,   2,   2,   2, 0.5, 0.5, 0.5, u

@@ -16,6 +16,7 @@ var __read = (this && this.__read) || function (o, n) {
     return ar;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+var base_1 = require("./base");
 function parse_yyyy_mm_dd(yyyy_mm_dd) {
     assert_yyyy_mm_dd(yyyy_mm_dd);
     var parts = yyyy_mm_dd.split('-').map(function (v) { return parseInt(v); });
@@ -110,4 +111,34 @@ function current_yyyy_mm_dd() {
     return to_yyyy_mm_dd(now.getUTCFullYear(), now.getUTCMonth() + 1, now.getUTCDate());
 }
 exports.current_yyyy_mm_dd = current_yyyy_mm_dd;
+// parse_month ---------------------------------------------------------------------------
+var month_names = [
+    'january',
+    'february',
+    'march',
+    'april',
+    'may',
+    'june',
+    'july',
+    'august',
+    'september',
+    'october',
+    'november',
+    'december'
+];
+var short_month_names = month_names.map(function (name) { return base_1.take(name, 3); });
+var month_names_map = new Map();
+var short_month_names_map = new Map();
+for (var i = 0; i < month_names.length; i++) {
+    month_names_map.set(month_names[i], i + 1);
+    short_month_names_map.set(short_month_names[i], i + 1);
+}
+function parse_month(month) {
+    var month_l = month.toLowerCase();
+    var n = month_names_map.get(month_l) || short_month_names_map.get(month_l);
+    if (n === undefined)
+        throw new Error("invalid month name '" + month + "'");
+    return n;
+}
+exports.parse_month = parse_month;
 //# sourceMappingURL=time.js.map

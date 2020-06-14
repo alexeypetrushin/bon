@@ -8,8 +8,12 @@ import * as os from 'os'
 export type EntryType = 'directory' | 'file' | 'link'
 export type Entry = { type: EntryType, name: string }
 
+
+// resolve -------------------------------------------------------------------------------
 export function resolve(...paths: string[]): string { return require('path').resolve(...paths) }
 
+
+// read_directory ------------------------------------------------------------------------
 export async function read_directory(path: string): Promise<Entry[]> {
   const names = (await promisify(nodefs.readdir)(path))
   const entries: Entry[] = []
@@ -17,6 +21,8 @@ export async function read_directory(path: string): Promise<Entry[]> {
   return entries
 }
 
+
+// read_file -----------------------------------------------------------------------------
 function read_file(path: string): Promise<Buffer>
 function read_file(path: string, options: { encoding: BufferEncoding }): Promise<string>
 async function read_file(path: string, options?: something) {
@@ -29,8 +35,39 @@ async function read_file(path: string, options?: something) {
 }
 export { read_file }
 
+
+// read_file_sync ------------------------------------------------------------------------
+function read_file_sync(path: string): Buffer
+function read_file_sync(path: string, options: { encoding: BufferEncoding }): string
+function read_file_sync(path: string, options?: something) {
+  try {
+    return nodefs.readFileSync(path, options) as something
+  } catch (e) {
+    // Because node.js error doesn't have stack trace
+    throw new Error(`can't read file '${path}' because of '${ensure_error(e).message}'`)
+  }
+}
+export { read_file_sync }
+
+
+// write_file ----------------------------------------------------------------------------
 // Creates parent directory automatically
 export async function write_file(
+  path:     string,
+  data:     something,
+  options?: { encoding?: BufferEncoding, flag?: string }
+): Promise<void> {
+  // Creating parent directory for to if it's not exist.
+  // Could be speed up by handling exception instead of checking for existance.
+  const directory = nodepath.dirname(path)
+  if (!(await exists(directory))) await make_directory(directory)
+  options = { ...options }
+  options.encoding = options.encoding || 'utf8'
+
+  await promisify(nodefs.writeFile)(path, data, options)
+}
+
+export async function write_file_sync(
   path:     string,
   data:     something,
   options?: { encoding?: BufferEncoding, flag?: string }
@@ -114,6 +151,15 @@ export async function make_directory(path: string): Promise<void> {
 export async function exists(path: string): Promise<boolean> {
   try {
     await promisify(nodefs.stat)(path)
+    return true
+  } catch (e) {
+    return false
+  }
+}
+
+export function exists_sync(path: string): boolean {
+  try {
+    nodefs.statSync(path)
     return true
   } catch (e) {
     return false

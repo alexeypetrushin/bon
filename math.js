@@ -124,7 +124,7 @@ function map_with_rank(list, order_by, map) {
     });
 }
 exports.map_with_rank = map_with_rank;
-base_1.inline_test(function () {
+base_1.test(function () {
     base_1.assert.equal(map_with_rank([4, 2, 3, 4, 5, 7, 5], function (v) { return v; }, function (v, r) { return [v, r]; }), [[4, 3], [2, 1], [3, 2], [4, 3], [5, 4], [7, 5], [5, 4]]);
 });
 function linear_regression_wrong(x_y_r) {
@@ -179,7 +179,7 @@ function differentiate(sparce_values) {
     return diffs;
 }
 exports.differentiate = differentiate;
-base_1.inline_test(function () {
+base_1.test(function () {
     var u = undefined;
     base_1.assert.equal(differentiate([
         u, 1, u, u, 8, u, u, 1, u
@@ -235,7 +235,7 @@ function integrate(diffs, base) {
     return values;
 }
 exports.integrate = integrate;
-base_1.inline_test(function () {
+base_1.test(function () {
     var u = undefined;
     base_1.assert.equal(integrate([
         u, u, 2, 2, 2, 0.5, 0.5, 0.5, u

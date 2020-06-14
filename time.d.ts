@@ -15,3 +15,4 @@ declare function to_yyyy_mm(y: number, m: number): string;
 export { to_yyyy_mm };
 export declare function current_yyyy_mm(): string;
 export declare function current_yyyy_mm_dd(): string;
+export declare function parse_month(month: string): number;

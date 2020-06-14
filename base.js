@@ -90,7 +90,11 @@ var __values = (this && this.__values) || function(o) {
     };
     throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
 };
+function __export(m) {
+    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
+}
 Object.defineProperty(exports, "__esModule", { value: true });
+__export(require("./map"));
 // Global variables for browser and node ------------------------------------------
 var uniglobal;
 exports.uniglobal = uniglobal;
@@ -143,39 +147,39 @@ function p() {
 }
 exports.p = p;
 var fetch = uniglobal.fetch || require('node-fetch');
-var focused_inline_tests = [];
-var inline_tests = [];
-exports.inline_test = function () {
+var focused_tests = [];
+var tests = [];
+exports.test = function () {
     var args = [];
     for (var _i = 0; _i < arguments.length; _i++) {
         args[_i] = arguments[_i];
     }
     var _a = __read(args.length == 1 ? [undefined, args[0]] : args, 2), name = _a[0], fn = _a[1];
-    inline_tests.push([name, fn]);
+    tests.push([name, fn]);
 };
-exports.inline_test.focus = function () {
+exports.test.focus = function () {
     var args = [];
     for (var _i = 0; _i < arguments.length; _i++) {
         args[_i] = arguments[_i];
     }
     var _a = __read(args.length == 1 ? [undefined, args[0]] : args, 2), name = _a[0], fn = _a[1];
-    focused_inline_tests.push([name, fn]);
+    focused_tests.push([name, fn]);
 };
-exports.inline_test.run = function () { return __awaiter(void 0, void 0, void 0, function () {
-    var tests, tests_1, tests_1_1, _a, name_1, test_1, e_1, e_2_1;
+exports.test.run = function () { return __awaiter(void 0, void 0, void 0, function () {
+    var list, list_1, list_1_1, _a, name_1, test_1, e_1, e_2_1;
     var e_2, _b;
     return __generator(this, function (_c) {
         switch (_c.label) {
             case 0:
-                tests = focused_inline_tests.length > 0 ? focused_inline_tests : inline_tests;
+                list = focused_tests.length > 0 ? focused_tests : tests;
                 _c.label = 1;
             case 1:
                 _c.trys.push([1, 8, 9, 10]);
-                tests_1 = __values(tests), tests_1_1 = tests_1.next();
+                list_1 = __values(list), list_1_1 = list_1.next();
                 _c.label = 2;
             case 2:
-                if (!!tests_1_1.done) return [3 /*break*/, 7];
-                _a = __read(tests_1_1.value, 2), name_1 = _a[0], test_1 = _a[1];
+                if (!!list_1_1.done) return [3 /*break*/, 7];
+                _a = __read(list_1_1.value, 2), name_1 = _a[0], test_1 = _a[1];
                 _c.label = 3;
             case 3:
                 _c.trys.push([3, 5, , 6]);
@@ -185,11 +189,11 @@ exports.inline_test.run = function () { return __awaiter(void 0, void 0, void 0,
                 return [3 /*break*/, 6];
             case 5:
                 e_1 = _c.sent();
-                log('error', "inline test failed " + (name_1 ? " '" + name_1 + "'" : ''), e_1);
+                log('error', "test failed " + (name_1 ? " '" + name_1 + "'" : ''), e_1);
                 uniglobal.process && uniglobal.process.exit();
                 return [3 /*break*/, 6];
             case 6:
-                tests_1_1 = tests_1.next();
+                list_1_1 = list_1.next();
                 return [3 /*break*/, 2];
             case 7: return [3 /*break*/, 10];
             case 8:
@@ -198,20 +202,20 @@ exports.inline_test.run = function () { return __awaiter(void 0, void 0, void 0,
                 return [3 /*break*/, 10];
             case 9:
                 try {
-                    if (tests_1_1 && !tests_1_1.done && (_b = tests_1.return)) _b.call(tests_1);
+                    if (list_1_1 && !list_1_1.done && (_b = list_1.return)) _b.call(list_1);
                 }
                 finally { if (e_2) throw e_2.error; }
                 return [7 /*endfinally*/];
             case 10:
-                log('info', 'inline tests passed');
+                log('info', 'tests passed');
                 return [2 /*return*/];
         }
     });
 }); };
-var run_inline_tests = (uniglobal.process && uniglobal.process.env &&
-    uniglobal.process.env.inline_test) == 'true';
-if (run_inline_tests)
-    uniglobal.setTimeout(exports.inline_test.run, 0);
+var run_tests = (uniglobal.process && uniglobal.process.env &&
+    uniglobal.process.env.test) == 'true';
+if (run_tests)
+    uniglobal.setTimeout(exports.test.run, 0);
 exports.all_docs = [];
 function doc() {
     var docs = [];
@@ -369,7 +373,7 @@ function deep_map(obj, map) {
         })));
 }
 exports.deep_map = deep_map;
-exports.inline_test(function () {
+exports.test(function () {
     var Wrapper = /** @class */ (function () {
         function Wrapper(v) {
             this.v = v;
@@ -644,6 +648,13 @@ function find(o, finder) {
     return undefined;
 }
 exports.find = find;
+function ensure_find(o, finder, on_error) {
+    var found = find(o, finder);
+    if (found === undefined)
+        throw new Error(on_error ? (typeof on_error == 'function' ? on_error() : on_error) : "element not found!");
+    return found;
+}
+exports.ensure_find = ensure_find;
 function find_index(list, finder) {
     var predicate = finder instanceof Function ? finder : function (v) { return v == finder; };
     for (var i = 0; i < list.length; i++)
@@ -795,6 +806,10 @@ function unique(list, to_key) {
     });
 }
 exports.unique = unique;
+function pick(o, keys) {
+    return partition(o, function (i) { return keys.includes(i); })[0];
+}
+exports.pick = pick;
 function reduce(o, accumulator, f) {
     each(o, function (v, i) { return accumulator = f(accumulator, v, i); });
     return accumulator;
@@ -808,6 +823,11 @@ function values(o) {
     return reduce(o, [], function (list, v) { list.push(v); return list; });
 }
 exports.values = values;
+// flatten -------------------------------------------------------------------------------
+function flatten(list) {
+    return reduce(list, [], function (acc, v) { acc.push.apply(acc, __spread(v)); return acc; });
+}
+exports.flatten = flatten;
 // sum -----------------------------------------------------------------------------------
 function sum(list) {
     return reduce(list, 0, function (sum, v) { return sum + v; });
@@ -837,7 +857,7 @@ function round(v, digits) {
         Math.round((v + Number.EPSILON) * Math.pow(10, digits)) / Math.pow(10, digits);
 }
 exports.round = round;
-exports.inline_test(function () {
+exports.test(function () {
     exports.assert.equal(round(0.05860103881518906, 2), 0.06);
 });
 // shuffle ------------------------------------------------------------------------
@@ -922,25 +942,11 @@ Map.prototype.toJSON = function () {
     return reduce(this, {}, function (map, v, k) { map[k] = v; return map; });
 };
 // Test ---------------------------------------------------------------------------
-function test(title, fn) {
-    return __awaiter(this, void 0, void 0, function () {
-        var e_5;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    _a.trys.push([0, 2, , 3]);
-                    return [4 /*yield*/, fn()];
-                case 1:
-                    _a.sent();
-                    return [3 /*break*/, 3];
-                case 2:
-                    e_5 = _a.sent();
-                    log('error', title);
-                    throw e_5;
-                case 3: return [2 /*return*/];
-            }
-        });
-    });
-}
-exports.test = test;
+// export async function test(title: string, fn: () => Promise<void> | void): Promise<void> {
+//   try       { await fn() }
+//   catch (e) {
+//     log('error', title)
+//     throw e
+//   }
+// }
 //# sourceMappingURL=base.js.map

@@ -12,7 +12,16 @@ declare function read_file(path: string, options: {
     encoding: BufferEncoding;
 }): Promise<string>;
 export { read_file };
+declare function read_file_sync(path: string): Buffer;
+declare function read_file_sync(path: string, options: {
+    encoding: BufferEncoding;
+}): string;
+export { read_file_sync };
 export declare function write_file(path: string, data: something, options?: {
+    encoding?: BufferEncoding;
+    flag?: string;
+}): Promise<void>;
+export declare function write_file_sync(path: string, data: something, options?: {
     encoding?: BufferEncoding;
     flag?: string;
 }): Promise<void>;
@@ -29,6 +38,7 @@ export declare function copy_file(from: string, to: something): Promise<void>;
 export declare function copy_directory(from: string, to: something): Promise<void>;
 export declare function make_directory(path: string): Promise<void>;
 export declare function exists(path: string): Promise<boolean>;
+export declare function exists_sync(path: string): boolean;
 export declare function delete_file(path: string): Promise<void>;
 export declare function delete_directory(path: string, options?: {
     recursive?: boolean;
