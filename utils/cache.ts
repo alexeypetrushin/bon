@@ -3,7 +3,7 @@ import * as fs from '../fs'
 import { MultiMap } from '../multi_map'
 
 // cache_fn ------------------------------------------------------------------------------
-// Functino should have simple arguments like string, number, boolean
+// Function should have simple arguments like string, number, boolean
 export function cache_fn<Fn extends Function>(fn: Fn): Fn {
   const cache = new MultiMap<something, something>()
   let no_args_cashe: something = undefined
@@ -12,8 +12,20 @@ export function cache_fn<Fn extends Function>(fn: Fn): Fn {
       if (!no_args_cashe) no_args_cashe = fn()
       return no_args_cashe
     } else {
+
+
       let value = cache.get(args)
       if (!value) {
+        // Ensuring args are of simple types, null or undefined are not allowed
+        args.map((arg) => {
+          const type = typeof arg
+          if (type != 'string' && type != 'boolean' && type != 'number')
+            throw new Error(
+              `arguments for function ${fn.name} cached with cache_fn should be of simple types` +
+              ` but it's '${type}'`
+            )
+        })
+
         value = fn(...args)
         cache.set(args, value)
       }

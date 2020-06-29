@@ -1,8 +1,9 @@
+type something = any
 type SimpleTypes = number | string | boolean
 
-export class Map<V, K extends SimpleTypes = string> {
+class Map2<V, K extends SimpleTypes = string> {
   public  readonly length = 0
-  private readonly _map = new global.Map<K, V>()
+  private readonly _map = new Map<K, V>()
 
 
   has(k: K): boolean { return this._map.has(k) }
@@ -42,8 +43,8 @@ export class Map<V, K extends SimpleTypes = string> {
   each(f: (v: V, k: K) => void): void { this._map.forEach(f) }
 
 
-  map<R>(f: (v: V, k: K) => R): Map<R, K> {
-    const r = new Map<R, K>()
+  map<R>(f: (v: V, k: K) => R): Map2<R, K> {
+    const r = new Map2<R, K>()
     this.each((v, k) => r.set(k, f(v, k)))
     return r
   }
@@ -56,4 +57,8 @@ export class Map<V, K extends SimpleTypes = string> {
 
 
   values(): V[] { return Array.from(this._map.values()) }
+
+  toJSON() { return (this._map as something).toJSON() }
 }
+
+export { Map2 as Map }

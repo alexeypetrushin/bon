@@ -1,5 +1,5 @@
 declare type SimpleTypes = number | string | boolean;
-export declare class Map<V, K extends SimpleTypes = string> {
+declare class Map2<V, K extends SimpleTypes = string> {
     readonly length = 0;
     private readonly _map;
     has(k: K): boolean;
@@ -9,9 +9,10 @@ export declare class Map<V, K extends SimpleTypes = string> {
     set(k: K, v: V): void;
     delete(k: K): V | undefined;
     each(f: (v: V, k: K) => void): void;
-    map<R>(f: (v: V, k: K) => R): Map<R, K>;
+    map<R>(f: (v: V, k: K) => R): Map2<R, K>;
     entries(): [K, V][];
     keys(): K[];
     values(): V[];
+    toJSON(): any;
 }
-export {};
+export { Map2 as Map };

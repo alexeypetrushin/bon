@@ -212,9 +212,8 @@ exports.test.run = function () { return __awaiter(void 0, void 0, void 0, functi
         }
     });
 }); };
-var run_tests = (uniglobal.process && uniglobal.process.env &&
-    uniglobal.process.env.test) == 'true';
-if (run_tests)
+exports.run_tests = (uniglobal.process && uniglobal.process.env && uniglobal.process.env.test) == 'true';
+if (exports.run_tests)
     uniglobal.setTimeout(exports.test.run, 0);
 exports.all_docs = [];
 function doc() {
@@ -807,9 +806,12 @@ function unique(list, to_key) {
 }
 exports.unique = unique;
 function pick(o, keys) {
-    return partition(o, function (i) { return keys.includes(i); })[0];
+    return partition(o, function (_v, i) { return keys.includes(i); })[0];
 }
 exports.pick = pick;
+exports.test(function () {
+    exports.assert.equal(pick({ a: 1, b: 2 }, ['a']), { a: 1 });
+});
 function reduce(o, accumulator, f) {
     each(o, function (v, i) { return accumulator = f(accumulator, v, i); });
     return accumulator;

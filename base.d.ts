@@ -18,6 +18,7 @@ export interface TestApi {
     run(): void;
 }
 export declare const test: TestApi;
+export declare const run_tests: boolean;
 export interface TextDoc {
     readonly tags?: string[];
     readonly title: string;

@@ -86,8 +86,7 @@ test.run = async () => {
   log('info', 'tests passed')
 }
 
-const run_tests = (uniglobal.process && uniglobal.process.env &&
-  uniglobal.process.env.test) == 'true'
+export const run_tests = (uniglobal.process && uniglobal.process.env && uniglobal.process.env.test) == 'true'
 if (run_tests) uniglobal.setTimeout(test.run, 0)
 
 
@@ -764,9 +763,12 @@ export function unique<V, Key>(list: Array<V>, to_key?: (v: V) => Key): Array<V>
 function pick<T>(list: T[], keys: number[]): T[]
 function pick<T extends {}, K extends keyof T>(map: T, k: K[]): Pick<T, K>
 function pick(o: something, keys: (string | number)[]) {
-  return partition(o, (i: something) => keys.includes(i))[0]
+  return partition(o, (_v, i: something) => keys.includes(i))[0]
 }
 export { pick }
+test(() => {
+  assert.equal(pick({ a: 1, b: 2 }, ['a']), { a: 1 })
+})
 
 
 // remove -------------------------------------------------------------------------
