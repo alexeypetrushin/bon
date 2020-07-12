@@ -159,6 +159,13 @@ export declare function unique<V, Key>(list: Array<V>, to_key?: (v: V) => Key): 
 declare function pick<T>(list: T[], keys: number[]): T[];
 declare function pick<T extends {}, K extends keyof T>(map: T, k: K[]): Pick<T, K>;
 export { pick };
+export declare function ensure<V>(value: (V | undefined) | ({
+    found: true;
+    value: V;
+} | {
+    found: false;
+    message: string;
+}), details?: string): V;
 declare function reduce<A, V>(list: V[], accumulator: A, f: (accumulator: A, v: V, key: number) => A): A;
 declare function reduce<A, V, K>(map: Map<K, V>, accumulator: A, f: (accumulator: A, v: V, key: number) => A): A;
 declare function reduce<A, V>(map: {

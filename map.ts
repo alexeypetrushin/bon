@@ -1,10 +1,29 @@
 type something = any
-type SimpleTypes = number | string | boolean
+type SimpleTypes = number | string
 
-class Map2<V, K extends SimpleTypes = string> {
+export class Hash<V, K extends SimpleTypes = string> {
   public  readonly length = 0
   private readonly _map = new Map<K, V>()
 
+  constructor()
+  constructor(map: { [key in K]: V })
+  constructor(list: [K, V][])
+  constructor(list: V[], to_k: (v: V) => K)
+  constructor(collection?: { [key in K]: V } | [K, V][] | V[], to_key?: (v: V) => K) {
+    if (collection) {
+      if (Array.isArray(collection)) {
+        if (to_key) {
+          const list = collection as V[]
+          for (let i = 0; i < list.length; i++) this._map.set(to_key(list[i]), list[i])
+        } else {
+          const list = collection as [K, V][]
+          for (let i = 0; i < list.length; i++) this._map.set(list[i][0], list[i][1])
+        }
+      } else {
+        for (const k in collection) this._map.set(k, collection[k])
+      }
+    }
+  }
 
   has(k: K): boolean { return this._map.has(k) }
 
@@ -26,6 +45,13 @@ class Map2<V, K extends SimpleTypes = string> {
   }
 
 
+  ensure_get(k: K): V {
+    const v = this._map.get(k)
+    if (v === undefined) throw new Error(`map expected to have key '${k}'`)
+    return v
+  }
+
+
   set(k: K, v: V): void {
     this._map.set(k, v)
     ;(<{ length: number }>this).length = this._map.size
@@ -43,8 +69,8 @@ class Map2<V, K extends SimpleTypes = string> {
   each(f: (v: V, k: K) => void): void { this._map.forEach(f) }
 
 
-  map<R>(f: (v: V, k: K) => R): Map2<R, K> {
-    const r = new Map2<R, K>()
+  map<R>(f: (v: V, k: K) => R): Hash<R, K> {
+    const r = new Hash<R, K>()
     this.each((v, k) => r.set(k, f(v, k)))
     return r
   }
@@ -60,5 +86,3 @@ class Map2<V, K extends SimpleTypes = string> {
 
   toJSON() { return (this._map as something).toJSON() }
 }
-
-export { Map2 as Map }

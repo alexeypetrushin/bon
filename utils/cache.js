@@ -25,7 +25,7 @@ var fs = require("../fs");
 var multi_map_1 = require("../multi_map");
 // cache_fn ------------------------------------------------------------------------------
 // Function should have simple arguments like string, number, boolean
-function cache_fn(fn) {
+function cache_fn(fn, to_key) {
     var cache = new multi_map_1.MultiMap();
     var no_args_cashe = undefined;
     return (function () {
@@ -39,17 +39,18 @@ function cache_fn(fn) {
             return no_args_cashe;
         }
         else {
-            var value = cache.get(args);
+            var key = to_key ? to_key.apply(void 0, __spread(args)) : args;
+            var value = cache.get(key);
             if (!value) {
                 // Ensuring args are of simple types, null or undefined are not allowed
-                args.map(function (arg) {
+                key.map(function (arg) {
                     var type = typeof arg;
                     if (type != 'string' && type != 'boolean' && type != 'number')
                         throw new Error("arguments for function " + fn.name + " cached with cache_fn should be of simple types" +
                             (" but it's '" + type + "'"));
                 });
                 value = fn.apply(void 0, __spread(args));
-                cache.set(args, value);
+                cache.set(key, value);
             }
             return value;
         }

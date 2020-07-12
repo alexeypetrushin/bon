@@ -1,10 +1,12 @@
-import { something, md5, hour, stable_json_stringify } from '../base'
+import { something, md5, hour, stable_json_stringify, p } from '../base'
 import * as fs from '../fs'
 import { MultiMap } from '../multi_map'
 
 // cache_fn ------------------------------------------------------------------------------
 // Function should have simple arguments like string, number, boolean
-export function cache_fn<Fn extends Function>(fn: Fn): Fn {
+export function cache_fn<Fn extends (...args: something) => something>(
+  fn: Fn, to_key?: ((...args: Parameters<Fn>) => (number | boolean | string)[])
+): Fn {
   const cache = new MultiMap<something, something>()
   let no_args_cashe: something = undefined
   return ((...args: something[]) => {
@@ -12,12 +14,11 @@ export function cache_fn<Fn extends Function>(fn: Fn): Fn {
       if (!no_args_cashe) no_args_cashe = fn()
       return no_args_cashe
     } else {
-
-
-      let value = cache.get(args)
+      const key = to_key ? to_key(...args as something) : args
+      let value = cache.get(key)
       if (!value) {
         // Ensuring args are of simple types, null or undefined are not allowed
-        args.map((arg) => {
+        key.map((arg) => {
           const type = typeof arg
           if (type != 'string' && type != 'boolean' && type != 'number')
             throw new Error(
@@ -27,7 +28,7 @@ export function cache_fn<Fn extends Function>(fn: Fn): Fn {
         })
 
         value = fn(...args)
-        cache.set(args, value)
+        cache.set(key, value)
       }
       return value
     }

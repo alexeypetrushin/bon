@@ -1,12 +1,30 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var Map2 = /** @class */ (function () {
-    function Map2() {
+var Hash = /** @class */ (function () {
+    function Hash(collection, to_key) {
         this.length = 0;
         this._map = new Map();
+        if (collection) {
+            if (Array.isArray(collection)) {
+                if (to_key) {
+                    var list = collection;
+                    for (var i = 0; i < list.length; i++)
+                        this._map.set(to_key(list[i]), list[i]);
+                }
+                else {
+                    var list = collection;
+                    for (var i = 0; i < list.length; i++)
+                        this._map.set(list[i][0], list[i][1]);
+                }
+            }
+            else {
+                for (var k in collection)
+                    this._map.set(k, collection[k]);
+            }
+        }
     }
-    Map2.prototype.has = function (k) { return this._map.has(k); };
-    Map2.prototype.get = function (k, dv) {
+    Hash.prototype.has = function (k) { return this._map.has(k); };
+    Hash.prototype.get = function (k, dv) {
         var v = this._map.get(k);
         if (v !== undefined)
             return v;
@@ -17,27 +35,33 @@ var Map2 = /** @class */ (function () {
         }
         return undefined;
     };
-    Map2.prototype.set = function (k, v) {
+    Hash.prototype.ensure_get = function (k) {
+        var v = this._map.get(k);
+        if (v === undefined)
+            throw new Error("map expected to have key '" + k + "'");
+        return v;
+    };
+    Hash.prototype.set = function (k, v) {
         this._map.set(k, v);
         this.length = this._map.size;
     };
-    Map2.prototype.delete = function (k) {
+    Hash.prototype.delete = function (k) {
         var v = this.get(k);
         this._map.delete(k);
         this.length = this._map.size;
         return v;
     };
-    Map2.prototype.each = function (f) { this._map.forEach(f); };
-    Map2.prototype.map = function (f) {
-        var r = new Map2();
+    Hash.prototype.each = function (f) { this._map.forEach(f); };
+    Hash.prototype.map = function (f) {
+        var r = new Hash();
         this.each(function (v, k) { return r.set(k, f(v, k)); });
         return r;
     };
-    Map2.prototype.entries = function () { return Array.from(this._map); };
-    Map2.prototype.keys = function () { return Array.from(this._map.keys()); };
-    Map2.prototype.values = function () { return Array.from(this._map.values()); };
-    Map2.prototype.toJSON = function () { return this._map.toJSON(); };
-    return Map2;
+    Hash.prototype.entries = function () { return Array.from(this._map); };
+    Hash.prototype.keys = function () { return Array.from(this._map.keys()); };
+    Hash.prototype.values = function () { return Array.from(this._map.values()); };
+    Hash.prototype.toJSON = function () { return this._map.toJSON(); };
+    return Hash;
 }());
-exports.Map = Map2;
+exports.Hash = Hash;
 //# sourceMappingURL=map.js.map

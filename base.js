@@ -812,6 +812,22 @@ exports.pick = pick;
 exports.test(function () {
     exports.assert.equal(pick({ a: 1, b: 2 }, ['a']), { a: 1 });
 });
+// ensure --------------------------------------------------------------------------------
+function ensure(value, details) {
+    if ((typeof value == 'object') && ('found' in value)) {
+        if (!value.found)
+            throw new Error(value.message || "value" + (details ? ' ' + details : '') + " not found");
+        else
+            return value.value;
+    }
+    else {
+        if (value === undefined)
+            throw new Error("value" + (details ? ' ' + details : '') + " not defined");
+        else
+            return value;
+    }
+}
+exports.ensure = ensure;
 function reduce(o, accumulator, f) {
     each(o, function (v, i) { return accumulator = f(accumulator, v, i); });
     return accumulator;

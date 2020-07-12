@@ -771,6 +771,22 @@ test(() => {
 })
 
 
+// ensure --------------------------------------------------------------------------------
+export function ensure<V>(
+  value: (V | undefined) |
+         ({ found: true, value: V } | { found: false, message: string }),
+  details?: string
+): V {
+  if ((typeof value == 'object') && ('found' in value)) {
+    if (!value.found) throw new Error(value.message || `value${details ? ' ' + details : ''} not found`)
+    else              return value.value
+  } else {
+    if (value === undefined) throw new Error(`value${details ? ' ' + details : ''} not defined`)
+    else              return value
+  }
+}
+
+
 // remove -------------------------------------------------------------------------
 // function remove<V>(list: Array<V>, i: number): V | undefined
 // function remove<V>(list: Array<V>, f: Predicate<V, number>): Array<V>
