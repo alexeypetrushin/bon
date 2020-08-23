@@ -519,7 +519,7 @@ export function reverse<T>(list: T[]): T[] {
 }
 
 
-// each ---------------------------------------------------------------------------
+// each ----------------------------------------------------------------------------------
 function each<T>(list: T[], f: (v: T, i: number) => void): void
 function each<K, V>(map: Map<K, V>, f: (v: V, k: K) => void): void
 function each<M extends {}, K extends keyof M>(map: M, f: (v: M[K], k: K) => void): void
@@ -529,6 +529,10 @@ function each<T>(o: T[] | { [key: string]: T }, f: (v: T, i: something) => void)
   else                         for(const k in o) if (o.hasOwnProperty(k)) f(o[k], k)
 }
 export { each }
+
+
+// Found ---------------------------------------------------------------------------------
+export type Found<V> = { found: true, value: V } | { found: false, message: string }
 
 
 // find ----------------------------------------------------------------------------------
@@ -772,16 +776,12 @@ test(() => {
 
 
 // ensure --------------------------------------------------------------------------------
-export function ensure<V>(
-  value: (V | undefined) |
-         ({ found: true, value: V } | { found: false, message: string }),
-  details?: string
-): V {
+export function ensure<V>(value: (V | undefined) | Found<V>, info?: string): V {
   if ((typeof value == 'object') && ('found' in value)) {
-    if (!value.found) throw new Error(value.message || `value${details ? ' ' + details : ''} not found`)
+    if (!value.found) throw new Error(value.message || `value${info ? ' ' + info : ''} not found`)
     else              return value.value
   } else {
-    if (value === undefined) throw new Error(`value${details ? ' ' + details : ''} not defined`)
+    if (value === undefined) throw new Error(`value${info ? ' ' + info : ''} not defined`)
     else              return value
   }
 }

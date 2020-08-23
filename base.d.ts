@@ -88,6 +88,13 @@ declare function each<T>(list: T[], f: (v: T, i: number) => void): void;
 declare function each<K, V>(map: Map<K, V>, f: (v: V, k: K) => void): void;
 declare function each<M extends {}, K extends keyof M>(map: M, f: (v: M[K], k: K) => void): void;
 export { each };
+export declare type Found<V> = {
+    found: true;
+    value: V;
+} | {
+    found: false;
+    message: string;
+};
 declare function find<T>(list: T[], v: T): T | undefined;
 declare function find<T>(list: T[], f: (v: T, i: number) => boolean): T | undefined;
 declare function find<T>(map: {
@@ -159,13 +166,7 @@ export declare function unique<V, Key>(list: Array<V>, to_key?: (v: V) => Key): 
 declare function pick<T>(list: T[], keys: number[]): T[];
 declare function pick<T extends {}, K extends keyof T>(map: T, k: K[]): Pick<T, K>;
 export { pick };
-export declare function ensure<V>(value: (V | undefined) | ({
-    found: true;
-    value: V;
-} | {
-    found: false;
-    message: string;
-}), details?: string): V;
+export declare function ensure<V>(value: (V | undefined) | Found<V>, info?: string): V;
 declare function reduce<A, V>(list: V[], accumulator: A, f: (accumulator: A, v: V, key: number) => A): A;
 declare function reduce<A, V, K>(map: Map<K, V>, accumulator: A, f: (accumulator: A, v: V, key: number) => A): A;
 declare function reduce<A, V>(map: {
