@@ -989,3 +989,6 @@ export function ensure_error(error: something, default_message = "Unknown error"
 //     throw e
 //   }
 // }
+
+// Errorneous ----------------------------------------------------------------------------
+export type Errorneous<R> = { is_error: true, error: string } | { is_error: false, result: R }

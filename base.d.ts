@@ -204,3 +204,10 @@ export declare class NeverError extends Error {
     constructor(message: never);
 }
 export declare function ensure_error(error: something, default_message?: string): Error;
+export declare type Errorneous<R> = {
+    is_error: true;
+    error: string;
+} | {
+    is_error: false;
+    result: R;
+};

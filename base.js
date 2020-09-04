@@ -959,12 +959,4 @@ Error.prototype.toJSON = function () {
 Map.prototype.toJSON = function () {
     return reduce(this, {}, function (map, v, k) { map[k] = v; return map; });
 };
-// Test ---------------------------------------------------------------------------
-// export async function test(title: string, fn: () => Promise<void> | void): Promise<void> {
-//   try       { await fn() }
-//   catch (e) {
-//     log('error', title)
-//     throw e
-//   }
-// }
 //# sourceMappingURL=base.js.map
