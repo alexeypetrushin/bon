@@ -251,7 +251,7 @@ function http_call(url, body, options) {
                         case 2: return [2 /*return*/, _a.sent()];
                         case 3:
                             e_3 = _a.sent();
-                            return [3 /*break*/, 4];
+                            throw e_3;
                         case 4: return [2 /*return*/];
                     }
                 });

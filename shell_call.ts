@@ -1,6 +1,7 @@
 import { assert, Errorneous, something, p, ensure_error } from "./base"
 
-export async function shell_call<BeforeOutput>({ before, process, after } : {
+const json_output_token = "shell_call_json_output:"
+export async function on_shell_call<BeforeOutput>({ before, process, after } : {
   before:  (before_input: something) => Promise<BeforeOutput>,
   process: (before_oputput: BeforeOutput, input: something) => Promise<something>,
   after:   (before_oputput: BeforeOutput | undefined, after_input: something) => Promise<void>
@@ -10,7 +11,7 @@ export async function shell_call<BeforeOutput>({ before, process, after } : {
   // Calling before
   let before_output: Errorneous<BeforeOutput>
   try {
-    before_output = { is_error: false, result: await before(data.before) }
+    before_output = { is_error: false, value: await before(data.before) }
   } catch (e) {
     before_output = { is_error: true, error: ensure_error(e).message }
   }
@@ -23,8 +24,8 @@ export async function shell_call<BeforeOutput>({ before, process, after } : {
   } else {
     for (let input of data.inputs) {
       try {
-        let result = await process(before_output.result, input)
-        results.push({ is_error: false, result })
+        let value = await process(before_output.value, input)
+        results.push({ is_error: false, value })
       } catch (e) {
         results.push({ is_error: true, error: ensure_error(e).message })
       }
@@ -33,11 +34,11 @@ export async function shell_call<BeforeOutput>({ before, process, after } : {
 
   // After
   try {
-    await after(before_output.is_error ? undefined : before_output.result, data.after) }
+    await after(before_output.is_error ? undefined : before_output.value, data.after) }
   catch (e) {
     results = data.inputs.map(() => ({ is_error: true, error: ensure_error(e).message }))
   }
 
-  global.process.stdout.write(JSON.stringify(results))
+  global.process.stdout.write(json_output_token + JSON.stringify(results))
   global.process.exit()
 }

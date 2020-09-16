@@ -2,6 +2,7 @@ export declare function parse_yyyy_mm_dd(yyyy_mm_dd: string): [number, number, n
 declare function to_yyyy_mm_dd(timestamp: number): string;
 declare function to_yyyy_mm_dd(y: number, m: number, d: number): string;
 export { to_yyyy_mm_dd };
+export declare function to_yyyy_mm_dd_hh_mm_ss(timestamp: number): string;
 export declare function yyyy_mm_to_y_m(yyyy_mm: string): [number, number];
 export declare function yyyy_mm_dd_to_y_m_d(yyyy_mm_dd: string): [number, number, number];
 export declare function yyyy_mm_to_m(yyyy_mm: string, base_year: number): number;

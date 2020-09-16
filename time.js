@@ -43,6 +43,16 @@ function to_yyyy_mm_dd(y, m, d) {
     }
 }
 exports.to_yyyy_mm_dd = to_yyyy_mm_dd;
+function to_yyyy_mm_dd_hh_mm_ss(timestamp) {
+    if (timestamp < 10000)
+        throw new Error("value for timestamp is too low, probably an error");
+    var date = new Date(timestamp);
+    var year = date.getUTCFullYear(), month = date.getUTCMonth() + 1, day = date.getUTCDate();
+    var hour = date.getUTCHours(), min = date.getUTCMinutes(), sec = date.getUTCSeconds();
+    return year + "-" + (month < 10 ? '0' + month : month) + "-" + (day < 10 ? '0' + day : day) +
+        (" " + (hour < 10 ? '0' + hour : hour) + ":" + (min < 10 ? '0' + min : min) + ":" + (sec < 10 ? '0' + sec : sec));
+}
+exports.to_yyyy_mm_dd_hh_mm_ss = to_yyyy_mm_dd_hh_mm_ss;
 function yyyy_mm_to_y_m(yyyy_mm) {
     assert_yyyy_mm(yyyy_mm);
     var parts = yyyy_mm.split('-').map(function (v) { return parseInt(v); });

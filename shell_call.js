@@ -48,10 +48,11 @@ var __values = (this && this.__values) || function(o) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var base_1 = require("./base");
-function shell_call(_a) {
+var json_output_token = "shell_call_json_output:";
+function on_shell_call(_a) {
     var before = _a.before, process = _a.process, after = _a.after;
     return __awaiter(this, void 0, void 0, function () {
-        var data, before_output, _b, e_1, results, _c, _d, input, result, e_2, e_3_1, e_4;
+        var data, before_output, _b, e_1, results, _c, _d, input, value, e_2, e_3_1, e_4;
         var e_3, _e;
         return __generator(this, function (_f) {
             switch (_f.label) {
@@ -63,7 +64,7 @@ function shell_call(_a) {
                     _b = { is_error: false };
                     return [4 /*yield*/, before(data.before)];
                 case 2:
-                    before_output = (_b.result = _f.sent(), _b);
+                    before_output = (_b.value = _f.sent(), _b);
                     return [3 /*break*/, 4];
                 case 3:
                     e_1 = _f.sent();
@@ -86,10 +87,10 @@ function shell_call(_a) {
                     _f.label = 7;
                 case 7:
                     _f.trys.push([7, 9, , 10]);
-                    return [4 /*yield*/, process(before_output.result, input)];
+                    return [4 /*yield*/, process(before_output.value, input)];
                 case 8:
-                    result = _f.sent();
-                    results.push({ is_error: false, result: result });
+                    value = _f.sent();
+                    results.push({ is_error: false, value: value });
                     return [3 /*break*/, 10];
                 case 9:
                     e_2 = _f.sent();
@@ -111,7 +112,7 @@ function shell_call(_a) {
                     return [7 /*endfinally*/];
                 case 14:
                     _f.trys.push([14, 16, , 17]);
-                    return [4 /*yield*/, after(before_output.is_error ? undefined : before_output.result, data.after)];
+                    return [4 /*yield*/, after(before_output.is_error ? undefined : before_output.value, data.after)];
                 case 15:
                     _f.sent();
                     return [3 /*break*/, 17];
@@ -120,12 +121,12 @@ function shell_call(_a) {
                     results = data.inputs.map(function () { return ({ is_error: true, error: base_1.ensure_error(e_4).message }); });
                     return [3 /*break*/, 17];
                 case 17:
-                    global.process.stdout.write(JSON.stringify(results));
+                    global.process.stdout.write(json_output_token + JSON.stringify(results));
                     global.process.exit();
                     return [2 /*return*/];
             }
         });
     });
 }
-exports.shell_call = shell_call;
+exports.on_shell_call = on_shell_call;
 //# sourceMappingURL=shell_call.js.map

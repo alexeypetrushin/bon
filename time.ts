@@ -26,6 +26,16 @@ function to_yyyy_mm_dd(y: number, m?: number, d?: number): string {
 export { to_yyyy_mm_dd }
 
 
+export function to_yyyy_mm_dd_hh_mm_ss(timestamp: number): string {
+  if (timestamp < 10000) throw new Error(`value for timestamp is too low, probably an error`)
+  const date = new Date(timestamp)
+  let year = date.getUTCFullYear(), month = date.getUTCMonth() + 1, day = date.getUTCDate()
+  let hour = date.getUTCHours(), min = date.getUTCMinutes(), sec = date.getUTCSeconds()
+  return `${year}-${month < 10 ? '0' + month : month}-${day < 10 ? '0' + day : day}` +
+    ` ${hour < 10 ? '0' + hour : hour}:${min < 10 ? '0' + min : min}:${sec < 10 ? '0' + sec : sec}`
+}
+
+
 export function yyyy_mm_to_y_m(yyyy_mm: string): [number, number] {
   assert_yyyy_mm(yyyy_mm)
   const parts = yyyy_mm.split('-').map((v: string) => parseInt(v))

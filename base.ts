@@ -129,7 +129,7 @@ export async function http_call<T>(url: string, body: unknown = {}, options: Htt
       if (!result.ok) throw new Error(`can't call ${url} ${result.status} ${result.statusText}`)
       return await result.json()
     } catch (e) {
-
+      throw e
     }
   }
   return new Promise((resolve, reject) => {
@@ -991,4 +991,4 @@ export function ensure_error(error: something, default_message = "Unknown error"
 // }
 
 // Errorneous ----------------------------------------------------------------------------
-export type Errorneous<R> = { is_error: true, error: string } | { is_error: false, result: R }
+export type Errorneous<R> = { is_error: true, error: string } | { is_error: false, value: R }

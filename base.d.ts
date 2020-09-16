@@ -209,5 +209,5 @@ export declare type Errorneous<R> = {
     error: string;
 } | {
     is_error: false;
-    result: R;
+    value: R;
 };
