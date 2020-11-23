@@ -14,11 +14,11 @@ export function resolve(...paths: string[]): string { return require('path').res
 
 
 // read_directory ------------------------------------------------------------------------
-export async function read_directory(path: string): Promise<Entry[]> {
+export async function read_directory(path: string, filter?: (entry: Entry) => boolean): Promise<Entry[]> {
   const names = (await promisify(nodefs.readdir)(path))
   const entries: Entry[] = []
   for (const name of names) entries.push({ type: await get_type(resolve(path, name)), name })
-  return entries
+  return filter ? entries.filter(filter) : entries
 }
 
 

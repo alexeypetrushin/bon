@@ -6,7 +6,7 @@ export declare type Entry = {
     name: string;
 };
 export declare function resolve(...paths: string[]): string;
-export declare function read_directory(path: string): Promise<Entry[]>;
+export declare function read_directory(path: string, filter?: (entry: Entry) => boolean): Promise<Entry[]>;
 declare function read_file(path: string): Promise<Buffer>;
 declare function read_file(path: string, options: {
     encoding: BufferEncoding;

@@ -109,24 +109,34 @@ export function doc(...docs: (Doc | (() => Doc))[]) {
 export function as_code(code: string) { return "\`\`\`\n" + code + "\n\`\`\`" }
 
 // http_call ----------------------------------------------------------------------
-interface HttpCallOptions {
-  method?:  'post' | 'get'
+export type HttpMethod = 'get' | 'post' | 'put' | 'delete'
+export interface HttpCallOptions {
+  method?:  HttpMethod
   headers?: { [key: string]: string | undefined }
+  params?:  { [key: string]: string | undefined }
   timeout?: number
 }
-export async function http_call<T>(url: string, body: unknown = {}, options: HttpCallOptions = {})
-: Promise<T> {
+export async function http_call<In, Out>(
+  url: string, body: In | {} = {}, options: HttpCallOptions = {}
+): Promise<Out> {
   async function call_without_timeout() {
     try {
-      const copied_ptions = { ...{ method: 'post' }, ...options }
-      delete copied_ptions.timeout
+      // const copied_options1 = { ...{ method: 'post' }, ...options }
+      // delete copied_options.timeout
       const fetch = uniglobal.fetch || require('node-fetch')
       if (!fetch) throw new Error('global.fetch not defined')
-      const result = await fetch(url, {
-        ...copied_ptions,
-        body: copied_ptions.method == 'get' ? undefined : JSON.stringify(body)
-      })
-      if (!result.ok) throw new Error(`can't call ${url} ${result.status} ${result.statusText}`)
+      const url_with_params = options.params ? build_url(url, options.params) : url
+      const method = options.method ?  options.method  : 'post'
+      const result = await fetch(
+        url_with_params,
+        {
+          method,
+          headers: options.headers ? options.headers : { 'Content-Type': 'application/json' },
+          body:    method != 'get' ? JSON.stringify(body) : undefined
+        }
+      )
+      if (!result.ok)
+        throw new Error(`can't ${method} ${url} ${result.status} ${result.statusText}`)
       return await result.json()
     } catch (e) {
       throw e
@@ -486,7 +496,9 @@ export { take }
 // last ---------------------------------------------------------------------------
 export function last<T>(list: Array<T>): T
 export function last<T>(list: Array<T>, n: number): T[]
-export function last<T>(list: Array<T>, n?: number) {
+export function last<T>(list: string): T[]
+export function last<T>(list: string, n: number): T[]
+export function last<T>(list: Array<T> | string, n?: number) {
   if (n === undefined) {
     if (list.length < 1) throw new Error(`can't get last elements from empty list`)
     return list[list.length - 1]
@@ -604,6 +616,50 @@ function group_by<V>(list: V[], f: (v: V, i: something) => something): Map<somet
   })
 }
 export { group_by }
+
+
+// group_by_n --------------------------------------------------------------------------------------
+export function group_by_n<V>(list: V[], n: number): V[][] {
+  const result: V[][] = []
+  let i = 0
+  while (true) {
+    const group: V[] = []
+    if (i < list.length) result.push(group)
+
+    for (let j = 0; j < n; j++) {
+      if ((i + j) < list.length) group.push(list[i + j])
+      else return result
+    }
+
+    i+= n
+  }
+}
+test("group_by_n", () => {
+  assert.equal(group_by_n([1, 2, 3], 2), [[1, 2], [3]])
+  assert.equal(group_by_n([1, 2], 2), [[1, 2]])
+  assert.equal(group_by_n([1], 2), [[1]])
+  assert.equal(group_by_n([], 2), [])
+})
+
+
+// execute_async -----------------------------------------------------------------------------------
+export async function execute_async<T, R>(
+  tasks: T[], process: ((task: T) => Promise<R>), workers_count: number
+): Promise<R[]> {
+  const results: { [key: number]: R } = {}
+  let i = 0
+  async function worker() {
+    while (i < tasks.length) {
+      const task_i = i++
+      const task = tasks[task_i]
+      results[task_i] = await process(task)
+    }
+  }
+  const promises: Promise<void>[] = []
+  for (let i = 0; i < workers_count; i++) promises.push(worker())
+  for (const promise of promises) await promise
+  return map(tasks, (_v, i) => results[i])
+}
 
 
 // entries ------------------------------------------------------------------------------
@@ -847,7 +903,7 @@ export { keys }
 
 // values --------------------------------------------------------------------------------
 function values<T>(list: T[]): T[]
-function values<T>(map: { [key: string]: T }): T[]
+function values<T>(map: { [key: string]: T | undefined }): T[]
 function values(o: something) {
   return reduce(o, [], (list: something, v) => { list.push(v); return list })
 }
