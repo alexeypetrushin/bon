@@ -191,6 +191,7 @@ declare function values<T>(list: T[]): T[];
 declare function values<T>(map: {
     [key: string]: T | undefined;
 }): T[];
+declare function values<K, T>(map: Map<K, T>): T[];
 export { values };
 export declare function flatten<T>(list: T[][]): T[];
 export declare function sum(list: number[]): number;

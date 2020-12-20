@@ -904,6 +904,7 @@ export { keys }
 // values --------------------------------------------------------------------------------
 function values<T>(list: T[]): T[]
 function values<T>(map: { [key: string]: T | undefined }): T[]
+function values<K, T>(map: Map<K, T>): T[]
 function values(o: something) {
   return reduce(o, [], (list: something, v) => { list.push(v); return list })
 }
